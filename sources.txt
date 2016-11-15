@@ -2,3 +2,5 @@ Attribution
 
 - Testing admin privileges
   http://stackoverflow.com/questions/1026431/cross-platform-way-to-check-admin-rights-in-a-python-script-under-windows
+- Pallier Python library
+  https://python-paillier.readthedocs.io/en/stable/
