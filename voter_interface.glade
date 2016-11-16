@@ -11,7 +11,20 @@
       <object class="GtkLabel" id="label1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Introduction page</property>
+        <property name="label" translatable="yes">&lt;big&gt;&lt;b&gt;Welcome to the 2016 General Election!&lt;/b&gt;&lt;/big&gt;
+
+This e-voting machine will take you step by step
+through the voting process.
+
+You will need the following items to cast your vote:
+
+1. Full Name
+2. Unique Voter Identification Code
+	(Provided to you by the registrar)
+
+Click "Next" to Continue...</property>
+        <property name="use_markup">True</property>
+        <property name="ellipsize">end</property>
       </object>
       <packing>
         <property name="page_type">intro</property>
@@ -22,9 +35,26 @@
       <object class="GtkLabel" id="label2">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Content page</property>
+        <property name="label" translatable="yes">Privacy Statement:
+
+You are attempting to use a computer owned by the United States Government
+for the express intent of casting a ballot in the general election.  By utilizing this
+system you agree to use the system ONLY FOR IT'S INTEDED PURPOSE.  Any
+attempt to bypass or circurmvent any security measure, or any attempt to use
+this system to commit voter fraud is a FEDERAL CRIME.  
+
+All activity, with the EXCEPTION of contents of your vote, may be monitored,
+intercepted, recorded, read, copied, or captured in any manner and disclosed in
+any manner, by authorized personnel.
+
+While you have registered to vote, please note that your vote will be known
+only to you.  The candidate that you choose is the ONLY aspect of this system
+to which you are expressly and technologically guaranteed privacy.
+
+Continuing use of this system constitutes consent to these terms.</property>
       </object>
       <packing>
+        <property name="page_type">intro</property>
         <property name="has_padding">False</property>
       </packing>
     </child>
@@ -32,10 +62,119 @@
       <object class="GtkLabel" id="label3">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Confirmation page</property>
+        <property name="label" translatable="yes">&lt;big&gt;&lt;b&gt;Voter Fraud:&lt;/b&gt;&lt;/big&gt;
+
+Various types of voter fraud are prohibted by federal law:
+
+False Information in, and Payments for, Registering and 
+	Voting. 42 U.S.C. § 1973i(c)
+Voting More than Once. 42 U.S.C  § 1973i(e)
+Fraudulent Registration or Voting 42 U.S.C. § 1973gg-10(2)
+Voting by a Non-Citizen 42 U.S.C. § 1973gg-10(2)
+False Claims of Citizenship 18 U.S.C. § 911
+Voting by Aliens 18 U.S.C. § 611</property>
+        <property name="use_markup">True</property>
+      </object>
+      <packing>
+        <property name="page_type">intro</property>
+        <property name="has_padding">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox" id="box4">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="label4">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="vexpand">True</property>
+            <property name="label" translatable="yes">Please ONE of the following candidates:</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+      <packing>
+        <property name="has_padding">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox" id="box5">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="label5">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="vexpand">True</property>
+            <property name="label" translatable="yes">Please review and confirm the following information:</property>
+            <property name="ellipsize">middle</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
       </object>
       <packing>
         <property name="page_type">confirm</property>
+        <property name="has_padding">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox" id="box6">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="vexpand">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <placeholder/>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+      <packing>
+        <property name="page_type">summary</property>
         <property name="has_padding">False</property>
       </packing>
     </child>
