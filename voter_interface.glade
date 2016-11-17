@@ -89,6 +89,48 @@ Voting by Aliens 18 U.S.C. § 611</property>
           <object class="GtkLabel" id="label4">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="vexpand">True</property>
+            <property name="label" translatable="yes">Please enter your 10-digit unique voter ID (i.e. 1234567890)</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEntry" id="entry4">
+            <property name="width_request">30</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="halign">center</property>
+            <property name="valign">start</property>
+            <property name="vexpand">True</property>
+            <property name="max_length">10</property>
+            <property name="width_chars">10</property>
+            <property name="input_purpose">digits</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="page_type">progress</property>
+        <property name="has_padding">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox" id="box5">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="label5">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
             <property name="halign">start</property>
             <property name="vexpand">True</property>
             <property name="label" translatable="yes">Please ONE of the following candidates:</property>
@@ -132,12 +174,12 @@ Voting by Aliens 18 U.S.C. § 611</property>
       </packing>
     </child>
     <child>
-      <object class="GtkBox" id="box5">
+      <object class="GtkBox" id="box6">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkLabel" id="label5">
+          <object class="GtkLabel" id="label">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">start</property>
@@ -161,7 +203,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
       </packing>
     </child>
     <child>
-      <object class="GtkBox" id="box6">
+      <object class="GtkBox" id="box7">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="vexpand">True</property>
