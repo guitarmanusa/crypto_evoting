@@ -43,6 +43,30 @@ def cancel_button_clicked(assistant):
     print("The 'Cancel' button has been clicked")
     Gtk.main_quit()
 
+def prepare_handler(widget, data):
+    if page1 == data:
+        print "Page 1"
+    if page2 == data:
+        print "Page 2"
+    if page3 == data:
+        print "Page 3"
+    if page4 == data:
+        print "Page 4"
+    if page5 == data:
+        print "Page 5"
+        print "Validate Unique User ID..."
+        dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
+        dialog.format_secondary_text("User ID " + builder.get_object("entry4").get_text() + " has already voted.")
+        dialog.run()
+        print("ERROR dialog closed")
+        dialog.destroy()
+        assistant.previous_page()
+    if page6 == data:
+        print "Page 6"
+    if page7 == data:
+        print "Page 7"
+
+
 def check_id_input(widget):
     new_text = widget.get_text()
     i = 0;
@@ -71,6 +95,7 @@ else:
     assistant.connect("cancel", cancel_button_clicked)
     assistant.connect("close", close_button_clicked)
     assistant.connect("apply", apply_button_clicked)
+    assistant.connect("prepare", prepare_handler)
 
     page1 = builder.get_object("label1")
     assistant.set_page_complete(page1, True)
