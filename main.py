@@ -1,4 +1,4 @@
-import ctypes, os, sys
+import ctypes, os, sys, time #time is for sleep(), remove in production
 try:
     import gi
 except ImportError:
@@ -23,9 +23,13 @@ def is_admin():
     return is_admin
 
 def login_clicked(button):
+    spinner = builder.get_object("spinner1")
+    spinner.start()
     if is_admin():
         print("Attempting to log in...")
+        #TODO implement login function
     else:
+        spinner.stop()
         dialog = Gtk.MessageDialog(button.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
         dialog.format_secondary_text("User must have administrator privileges to log in.")
         dialog.run()
