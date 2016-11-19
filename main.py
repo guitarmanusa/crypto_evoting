@@ -66,7 +66,6 @@ def prepare_handler(widget, data):
     if page7 == data:
         print("Page 7")
 
-
 def check_id_input(widget):
     new_text = widget.get_text()
     i = 0;
@@ -88,6 +87,8 @@ if is_admin():
     builder.add_from_file("admin_login.glade")
     login = builder.get_object("button_login")
     login.connect("clicked", login_clicked)
+    quit_menu_option = builder.get_object("imagemenuitem3")
+    quit_menu_option.connect("activate", Gtk.main_quit)
 else:
     builder.add_from_file("voter_interface.glade")
 
