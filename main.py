@@ -105,6 +105,8 @@ def prepare_handler(widget, data):
         try:
             global cnx
             cnx = mysql.connector.connect(
+                host='159.203.140.245',
+                port='3306',
                 user='read_candidates',
                 password='giantmeteor',
                 database='evoting',
