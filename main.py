@@ -15,6 +15,22 @@ try:
 except (ImportError, RuntimeError):
     print (False, "Requires pygobject to be installed.")
 
+try:
+    import mysql.connector
+    from mysql.connector import errorcode
+except (ImportError, RuntimeError):
+    print (False, "Requires MySQL DB connector to be installed.")
+
+cnx = None
+
+def program_quit(self=None, widget=None):
+    try:
+        global cnx
+        cnx.close()
+    except AttributeError:
+        pass
+    Gtk.main_quit()
+
 def is_admin():
     try:
      is_admin = os.getuid() == 0
@@ -28,6 +44,27 @@ def login_clicked(button):
     if is_admin():
         print("Attempting to log in...")
         #TODO implement login function
+        try:
+            global cnx
+            cnx = mysql.connector.connect(
+                user=builder.get_object("entry_username").get_text(),
+                password=builder.get_object("entry_password").get_text(),
+                database='roundcubemail', #TODO changes
+                auth_plugin='sha256_password',
+                ssl_ca='ca.pem',
+                ssl_cert='client-cert.pem',
+                ssl_key='client-key.pem',
+                ssl_verify_cert=True
+            )
+            login.set_label("Logged In!")
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+        spinner.stop()
     else:
         spinner.stop()
         dialog = Gtk.MessageDialog(button.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
@@ -41,11 +78,11 @@ def apply_button_clicked(assistant):
 
 def close_button_clicked(assistant):
     print("The 'Close' button has been clicked")
-    Gtk.main_quit()
+    program_quit()
 
 def cancel_button_clicked(assistant):
     print("The 'Cancel' button has been clicked")
-    Gtk.main_quit()
+    program_quit()
 
 def prepare_handler(widget, data):
     if page1 == data:
@@ -59,12 +96,49 @@ def prepare_handler(widget, data):
     if page5 == data:
         print("Page 5")
         print("Validate Unique User ID...")
-        dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
+        '''dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
         dialog.format_secondary_text("User ID " + builder.get_object("entry4").get_text() + " has already voted.")
         dialog.run()
         print("ERROR dialog closed")
         dialog.destroy()
-        assistant.previous_page()
+        assistant.previous_page()'''
+        try:
+            global cnx
+            cnx = mysql.connector.connect(
+                user='read_candidates',
+                password='giantmeteor',
+                database='evoting',
+                auth_plugin='sha256_password',
+                ssl_ca='ca.pem',
+                ssl_cert='client-cert.pem',
+                ssl_key='client-key.pem',
+                ssl_verify_cert=True
+            )
+            cursor = cnx.cursor()
+            query = ("SELECT pres_nom, vp_nom, party FROM candidates")
+            cursor.execute(query)
+            candidates = list(cursor)
+            if len(candidates) >= 1:
+                candidate1 = Gtk.RadioButton.new_with_label(None, candidates[0][0] + " and " + candidates[0][1] + " (" + candidates[0][2] + " Party)")
+                page5.pack_start(candidate1, False, False, 0)
+                current_button = candidate1
+                for (pres_nom, vp_nom, party) in candidates[1:]:
+                    # add radio buttons to the page
+                    #page5
+                    current_button = Gtk.RadioButton.new_with_label_from_widget(current_button, pres_nom + " and " + vp_nom + " (" + party + ")")
+                    page5.pack_start(current_button, False, False, 0)
+                current_button = Gtk.RadioButton.new_with_label_from_widget(current_button, "None of the Above")
+                page5.pack_start(current_button, False, False, 0)
+                page5.show_all()
+            else:
+                print("Error, Candidates list is empty.")
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
     if page6 == data:
         print("Page 6")
     if page7 == data:
@@ -91,8 +165,10 @@ if is_admin():
     builder.add_from_file("admin_login.glade")
     login = builder.get_object("button_login")
     login.connect("clicked", login_clicked)
+    builder.get_object("entry_username").connect("activate", login_clicked)
+    builder.get_object("entry_password").connect("activate", login_clicked)
     quit_menu_option = builder.get_object("imagemenuitem3")
-    quit_menu_option.connect("activate", Gtk.main_quit)
+    quit_menu_option.connect("activate", program_quit)
 else:
     builder.add_from_file("voter_interface.glade")
 
@@ -125,7 +201,7 @@ else:
     assistant.set_page_complete(page7, True)
 
 window = builder.get_object("main_window")
-window.connect("delete-event", Gtk.main_quit)
+window.connect("delete-event", program_quit)
 window.show_all()
 
 Gtk.main()
