@@ -47,9 +47,10 @@ def login_clicked(button):
         try:
             global cnx
             cnx = mysql.connector.connect(
+                host='159.203.140.245',
                 user=builder.get_object("entry_username").get_text(),
                 password=builder.get_object("entry_password").get_text(),
-                database='roundcubemail', #TODO changes
+                database='evoting',
                 auth_plugin='sha256_password',
                 ssl_ca='ca.pem',
                 ssl_cert='client-cert.pem',
@@ -108,7 +109,7 @@ def prepare_handler(widget, data):
                 host='159.203.140.245',
                 port='3306',
                 user='read_candidates',
-                password='giantmeteor',
+                password='GiantMeteor2016!@',
                 database='evoting',
                 auth_plugin='sha256_password',
                 ssl_ca='ca.pem',
@@ -117,7 +118,7 @@ def prepare_handler(widget, data):
                 ssl_verify_cert=True
             )
             cursor = cnx.cursor()
-            query = ("SELECT pres_nom, vp_nom, party FROM candidates")
+            query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
             cursor.execute(query)
             candidates = list(cursor)
             if len(candidates) >= 1:
