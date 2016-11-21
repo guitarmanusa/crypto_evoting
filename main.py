@@ -22,6 +22,8 @@ except (ImportError, RuntimeError):
     print (False, "Requires MySQL DB connector to be installed.")
 
 cnx = None
+candidate_list = None
+vote = None
 
 def program_quit(self=None, widget=None):
     try:
@@ -85,6 +87,10 @@ def cancel_button_clicked(assistant):
     print("The 'Cancel' button has been clicked")
     program_quit()
 
+def validate_user_id(id):
+    #query voter table and check if voter already voted
+    return True
+
 def prepare_handler(widget, data):
     if page1 == data:
         print("Page 1")
@@ -97,55 +103,77 @@ def prepare_handler(widget, data):
     if page5 == data:
         print("Page 5")
         print("Validate Unique User ID...")
-        '''dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
-        dialog.format_secondary_text("User ID " + builder.get_object("entry4").get_text() + " has already voted.")
-        dialog.run()
-        print("ERROR dialog closed")
-        dialog.destroy()
-        assistant.previous_page()'''
+        if (validate_user_id(builder.get_object("entry4").get_text()) == False):
+            dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
+            dialog.format_secondary_text("User ID " + builder.get_object("entry4").get_text() + " has already voted.")
+            dialog.run()
+            print("ERROR dialog closed")
+            dialog.destroy()
+            assistant.previous_page()
+        global candidate_list
+        if (candidate_list == None):
+            try:
+                global cnx
+                cnx = mysql.connector.connect(
+                    host='159.203.140.245',
+                    port='3306',
+                    user='read_candidates',
+                    password='GiantMeteor2016!@',
+                    database='evoting',
+                    auth_plugin='sha256_password',
+                    ssl_ca='ca.pem',
+                    ssl_cert='client-cert.pem',
+                    ssl_key='client-key.pem',
+                    ssl_verify_cert=True
+                )
+                cursor = cnx.cursor()
+                query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
+                cursor.execute(query)
+                candidate_list = list(cursor)
+            except mysql.connector.Error as err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    print("Something is wrong with your user name or password")
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print("Database does not exist")
+                else:
+                    print(err)
         try:
-            global cnx
-            cnx = mysql.connector.connect(
-                host='159.203.140.245',
-                port='3306',
-                user='read_candidates',
-                password='GiantMeteor2016!@',
-                database='evoting',
-                auth_plugin='sha256_password',
-                ssl_ca='ca.pem',
-                ssl_cert='client-cert.pem',
-                ssl_key='client-key.pem',
-                ssl_verify_cert=True
-            )
-            cursor = cnx.cursor()
-            query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
-            cursor.execute(query)
-            candidates = list(cursor)
-            if len(candidates) >= 1:
-                candidate1 = Gtk.RadioButton.new_with_label(None, candidates[0][0] + " and " + candidates[0][1] + " (" + candidates[0][2] + " Party)")
+            if len(candidate_list) >= 1:
+                candidate1 = Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)")
                 page5.pack_start(candidate1, False, False, 0)
                 current_button = candidate1
-                for (pres_nom, vp_nom, party) in candidates[1:]:
+                for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
                     # add radio buttons to the page
-                    #page5
                     current_button = Gtk.RadioButton.new_with_label_from_widget(current_button, pres_nom + " and " + vp_nom + " (" + party + ")")
+                    current_button.connect("toggled", on_button_toggled, c_id)
                     page5.pack_start(current_button, False, False, 0)
                 current_button = Gtk.RadioButton.new_with_label_from_widget(current_button, "None of the Above")
                 page5.pack_start(current_button, False, False, 0)
                 page5.show_all()
             else:
                 print("Error, Candidates list is empty.")
-        except mysql.connector.Error as err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print("Database does not exist")
-            else:
-                print(err)
+        except TypeError:
+            print("Error, Lost connection to database.")
+        assistant.set_page_complete(page5, True)
     if page6 == data:
         print("Page 6")
+        global vote
+        #TODO show confirmation page with selected candidate information
     if page7 == data:
         print("Page 7")
+        #submit vote
+            #actual work done here
+            #zero knowledge proof
+            #blind signature
+            #encrypt
+            #store in database
+            #update voter id has voted
+
+def on_button_toggled(c_id):
+    global vote, candidate_list
+    vote = c_id
+    print(candidate_list)
+    print(c_id)
 
 def check_id_input(widget):
     new_text = widget.get_text()
@@ -195,7 +223,7 @@ else:
     assistant.set_page_complete(page4, False)
 
     page5 = builder.get_object("box5")
-    assistant.set_page_complete(page5, True)
+    assistant.set_page_complete(page5, False)
 
     page6 = builder.get_object("box6")
     assistant.set_page_complete(page6, True)
