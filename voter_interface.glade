@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.18.3 -->
+<!-- Generated with glade 3.19.0 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkAssistant" id="main_window">
@@ -35,7 +35,7 @@ Click "Next" to Continue...</property>
       <object class="GtkLabel" id="label2">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Privacy Statement:
+        <property name="label" translatable="yes">&lt;big&gt;&lt;b&gt;Privacy Statement:&lt;/b&gt;&lt;/big&gt;
 
 You are attempting to use a computer owned by the United States Government
 for the express intent of casting a ballot in the general election.  By utilizing this
@@ -51,7 +51,8 @@ While you have registered to vote, please note that your vote will be known
 only to you.  The candidate that you choose is the ONLY aspect of this system
 to which you are expressly and technologically guaranteed privacy.
 
-Continuing use of this system constitutes consent to these terms.</property>
+&lt;b&gt;Continuing use of this system constitutes consent to these terms.&lt;/b&gt;</property>
+        <property name="use_markup">True</property>
       </object>
       <packing>
         <property name="page_type">intro</property>
@@ -191,9 +192,12 @@ Voting by Aliens 18 U.S.C. § 611</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">start</property>
+            <property name="valign">start</property>
             <property name="vexpand">True</property>
-            <property name="label" translatable="yes">Please review and confirm the following information:</property>
+            <property name="label" translatable="yes">&lt;big&gt;&lt;b&gt;Please REVIEW and CONFIRM the following information:&lt;/b&gt;&lt;/big&gt;</property>
+            <property name="use_markup">True</property>
             <property name="ellipsize">middle</property>
+            <property name="lines">6</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -202,7 +206,40 @@ Voting by Aliens 18 U.S.C. § 611</property>
           </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkLabel" id="label6">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="valign">start</property>
+            <property name="margin_left">20</property>
+            <property name="vexpand">True</property>
+            <property name="label" translatable="yes">You have selected:</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label7">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="valign">start</property>
+            <property name="vexpand">True</property>
+            <property name="label" translatable="yes">If this information is incorrect, or if you would like to change your selection, select the "Back" button below now.
+
+
+&lt;big&gt;&lt;b&gt;NOTE:&lt;/b&gt;&lt;/big&gt;  Clicking the "Next" will CONFIRM your vote and further alteration will be &lt;b&gt;impossible&lt;/b&gt;.</property>
+            <property name="use_markup">True</property>
+            <property name="wrap">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
         </child>
       </object>
       <packing>
