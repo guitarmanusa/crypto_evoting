@@ -94,82 +94,73 @@ def validate_user_id(id):
     return True
 
 def prepare_handler(widget, data):
-    if page1 == data:
-        print("Page 1")
-    if page2 == data:
-        print("Page 2")
-    if page3 == data:
-        print("Page 3")
     if page4 == data:
-        print("Page 4")
         builder.get_object("entry4").connect("activate", lambda x: builder.get_object("assistant-action_area1").grab_focus())
     if page5 == data:
-        print("Page 5")
         print("Validate Unique User ID...")
-        if (validate_user_id(builder.get_object("entry4").get_text()) == False):
+        if validate_user_id(builder.get_object("entry4").get_text()):
+            global candidate_list
+            if (candidate_list == None):
+                try:
+                    global cnx
+                    cnx = mysql.connector.connect(
+                        host='159.203.140.245',
+                        port='3306',
+                        user='read_candidates',
+                        password='GiantMeteor2016!@',
+                        database='evoting',
+                        auth_plugin='sha256_password',
+                        ssl_ca='ca.pem',
+                        ssl_cert='client-cert.pem',
+                        ssl_key='client-key.pem',
+                        ssl_verify_cert=True
+                    )
+                    cursor = cnx.cursor()
+                    query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
+                    cursor.execute(query)
+                    candidate_list = list(cursor)
+                except mysql.connector.Error as err:
+                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                        print("Something is wrong with your user name or password")
+                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                        print("Database does not exist")
+                    else:
+                        print(err)
+            global candidates_populated
+            if len(candidate_list) >= 1 and candidates_populated == False:
+                candidate_buttons = []
+                candidate_buttons.append(Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)"))
+                candidate_buttons[-1].connect("toggled", on_button_toggled, candidate_list[0][3])
+                page5.pack_start(candidate_buttons[-1], False, False, 0)
+                for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
+                    # add radio buttons to the page
+                    candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + ")"))
+                    candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
+                    page5.pack_start(candidate_buttons[-1], False, False, 0)
+                candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
+                candidate_buttons[-1].connect("toggled", on_button_toggled, None)
+                candidate_buttons[-1].set_active(True)
+                page5.pack_start(candidate_buttons[-1], False, False, 0)
+                page5.show_all()
+                candidate_list.append(("None of the above", "None", "None", None))
+                candidates_populated = True
+            else:
+                print("Error, Candidates list is empty.")
+            assistant.set_page_complete(page5, True)
+        else:
             dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
             dialog.format_secondary_text("User ID " + builder.get_object("entry4").get_text() + " has already voted.")
             dialog.run()
             print("ERROR dialog closed")
             dialog.destroy()
             assistant.previous_page()
-        global candidate_list
-        if (candidate_list == None):
-            try:
-                global cnx
-                cnx = mysql.connector.connect(
-                    host='159.203.140.245',
-                    port='3306',
-                    user='read_candidates',
-                    password='GiantMeteor2016!@',
-                    database='evoting',
-                    auth_plugin='sha256_password',
-                    ssl_ca='ca.pem',
-                    ssl_cert='client-cert.pem',
-                    ssl_key='client-key.pem',
-                    ssl_verify_cert=True
-                )
-                cursor = cnx.cursor()
-                query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
-                cursor.execute(query)
-                candidate_list = list(cursor)
-            except mysql.connector.Error as err:
-                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                    print("Something is wrong with your user name or password")
-                elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                    print("Database does not exist")
-                else:
-                    print(err)
-        global candidates_populated
-        if len(candidate_list) >= 1 and candidates_populated == False:
-            candidate_buttons = []
-            candidate_buttons.append(Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)"))
-            candidate_buttons[-1].connect("toggled", on_button_toggled, candidate_list[0][3])
-            page5.pack_start(candidate_buttons[-1], False, False, 0)
-            for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
-                # add radio buttons to the page
-                candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + ")"))
-                candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
-                page5.pack_start(candidate_buttons[-1], False, False, 0)
-            candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
-            candidate_buttons[-1].connect("toggled", on_button_toggled, None)
-            candidate_buttons[-1].set_active(True)
-            page5.pack_start(candidate_buttons[-1], False, False, 0)
-            page5.show_all()
-            candidate_list.append(("None of the above", "None", "None", None))
-            candidates_populated = True
-        else:
-            print("Error, Candidates list is empty.")
-        assistant.set_page_complete(page5, True)
     if page6 == data:
-        print("Page 6", candidate_list)
         global vote
-        #TODO show confirmation page with selected candidate information
+        #show confirmation page with selected candidate information
         for candidate in candidate_list:
             if candidate[3] == vote:
                 builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
     if page7 == data:
-        print("Page 7")
         #submit vote
             #actual work done here
             #zero knowledge proof
@@ -177,6 +168,15 @@ def prepare_handler(widget, data):
             #encrypt
             #store in database
             #update voter id has voted
+        if submit():
+            builder.get_object("label8").set_markup("<big><b>Success!</b></big>\n\nYour vote has been successfully recorded.")
+            builder.get_object("image1").set_from_file("green-checkmark.png")
+        else:
+            builder.get_object("label8").set_markup("<big><b>Error!</b></big>\n\nThere was an error recording your vote.  Please start over again.")
+            builder.get_object("image1").set_from_file("red-x.png")
+
+def submit():
+    return True
 
 def on_button_toggled(button, c_id):
     global vote
@@ -226,8 +226,8 @@ else:
     page3 = builder.get_object("label3")
     assistant.set_page_complete(page3, True)
 
-    page4 = builder.get_object("box4")
-    builder.get_object("entry4").connect("changed", check_id_input)
+    page4 = builder.get_object("grid1")
+    builder.get_object("entry5").connect("changed", check_id_input)
     assistant.set_page_complete(page4, False)
 
     page5 = builder.get_object("box5")

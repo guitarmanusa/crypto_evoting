@@ -82,44 +82,160 @@ Voting by Aliens 18 U.S.C. § 611</property>
       </packing>
     </child>
     <child>
-      <object class="GtkBox" id="box4">
+      <object class="GtkGrid" id="grid1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkLabel" id="label4">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="vexpand">True</property>
-            <property name="label" translatable="yes">Please enter your 10-digit unique voter ID (i.e. 1234567890)</property>
+            <property name="margin_top">70</property>
+            <property name="margin_bottom">50</property>
+            <property name="vexpand">False</property>
+            <property name="label" translatable="yes">Please enter your identifying information below:</property>
           </object>
           <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+            <property name="width">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEntry" id="entry1">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="margin_right">60</property>
+            <property name="margin_bottom">5</property>
+            <property name="hexpand">True</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEntry" id="entry2">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="margin_right">60</property>
+            <property name="margin_bottom">5</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEntry" id="entry3">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="margin_right">60</property>
+            <property name="margin_bottom">5</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">3</property>
           </packing>
         </child>
         <child>
           <object class="GtkEntry" id="entry4">
-            <property name="width_request">30</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="halign">center</property>
-            <property name="valign">start</property>
-            <property name="vexpand">True</property>
-            <property name="max_length">10</property>
-            <property name="width_chars">10</property>
-            <property name="input_purpose">digits</property>
+            <property name="margin_right">60</property>
+            <property name="margin_bottom">5</property>
           </object>
           <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="left_attach">1</property>
+            <property name="top_attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label9">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">end</property>
+            <property name="margin_right">32</property>
+            <property name="hexpand">False</property>
+            <property name="label" translatable="yes">First Name:</property>
+            <property name="justify">right</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label10">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">end</property>
+            <property name="margin_right">15</property>
+            <property name="label" translatable="yes">Middle Name:</property>
+            <property name="justify">right</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label11">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">end</property>
+            <property name="margin_right">32</property>
+            <property name="label" translatable="yes">Last Name:</property>
+            <property name="justify">right</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label12">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">end</property>
+            <property name="margin_right">63</property>
+            <property name="label" translatable="yes">Suffix:</property>
+            <property name="justify">right</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label13">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">end</property>
+            <property name="margin_left">50</property>
+            <property name="margin_right">6</property>
+            <property name="label" translatable="yes">10 digit Unique Voter ID:</property>
+            <property name="justify">right</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEntry" id="entry5">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="margin_right">60</property>
+            <property name="margin_bottom">4</property>
+            <property name="max_length">10</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">5</property>
           </packing>
         </child>
       </object>
       <packing>
-        <property name="page_type">progress</property>
         <property name="has_padding">False</property>
       </packing>
     </child>
@@ -233,7 +349,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
             <property name="label" translatable="yes">If this information is incorrect, or if you would like to change your selection, select the "Back" button below now.
 
 
-&lt;big&gt;&lt;b&gt;NOTE:&lt;/b&gt;&lt;/big&gt;  Clicking the "Next" will CONFIRM your vote and further alteration will be &lt;b&gt;impossible&lt;/b&gt;.</property>
+&lt;big&gt;&lt;b&gt;NOTE:&lt;/b&gt;&lt;/big&gt;  Clicking "APPLY" will CONFIRM your vote and further alteration will be &lt;b&gt;impossible&lt;/b&gt;.</property>
             <property name="use_markup">True</property>
             <property name="wrap">True</property>
           </object>
@@ -256,10 +372,29 @@ Voting by Aliens 18 U.S.C. § 611</property>
         <property name="vexpand">True</property>
         <property name="orientation">vertical</property>
         <child>
-          <placeholder/>
+          <object class="GtkLabel" id="label8">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="use_markup">True</property>
+            <property name="wrap">True</property>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkImage" id="image1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="stock">gtk-missing-image</property>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
         </child>
       </object>
       <packing>
