@@ -24,6 +24,7 @@ except (ImportError, RuntimeError):
 cnx = None
 candidate_list = None
 vote = None
+candidates_populated = False
 
 def program_quit(self=None, widget=None):
     try:
@@ -89,6 +90,7 @@ def cancel_button_clicked(assistant):
 
 def validate_user_id(id):
     #query voter table and check if voter already voted
+    print(id)
     return True
 
 def prepare_handler(widget, data):
@@ -100,6 +102,7 @@ def prepare_handler(widget, data):
         print("Page 3")
     if page4 == data:
         print("Page 4")
+        builder.get_object("entry4").connect("activate", lambda x: builder.get_object("assistant-action_area1").grab_focus())
     if page5 == data:
         print("Page 5")
         print("Validate Unique User ID...")
@@ -137,28 +140,34 @@ def prepare_handler(widget, data):
                     print("Database does not exist")
                 else:
                     print(err)
-        try:
-            if len(candidate_list) >= 1:
-                candidate1 = Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)")
-                page5.pack_start(candidate1, False, False, 0)
-                current_button = candidate1
-                for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
-                    # add radio buttons to the page
-                    current_button = Gtk.RadioButton.new_with_label_from_widget(current_button, pres_nom + " and " + vp_nom + " (" + party + ")")
-                    current_button.connect("toggled", on_button_toggled, c_id)
-                    page5.pack_start(current_button, False, False, 0)
-                current_button = Gtk.RadioButton.new_with_label_from_widget(current_button, "None of the Above")
-                page5.pack_start(current_button, False, False, 0)
-                page5.show_all()
-            else:
-                print("Error, Candidates list is empty.")
-        except TypeError:
-            print("Error, Lost connection to database.")
+        global candidates_populated
+        if len(candidate_list) >= 1 and candidates_populated == False:
+            candidate_buttons = []
+            candidate_buttons.append(Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)"))
+            candidate_buttons[-1].connect("toggled", on_button_toggled, candidate_list[0][3])
+            page5.pack_start(candidate_buttons[-1], False, False, 0)
+            for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
+                # add radio buttons to the page
+                candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + ")"))
+                candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
+                page5.pack_start(candidate_buttons[-1], False, False, 0)
+            candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
+            candidate_buttons[-1].connect("toggled", on_button_toggled, None)
+            candidate_buttons[-1].set_active(True)
+            page5.pack_start(candidate_buttons[-1], False, False, 0)
+            page5.show_all()
+            candidate_list.append(("None of the above", "None", "None", None))
+            candidates_populated = True
+        else:
+            print("Error, Candidates list is empty.")
         assistant.set_page_complete(page5, True)
     if page6 == data:
-        print("Page 6")
+        print("Page 6", candidate_list)
         global vote
         #TODO show confirmation page with selected candidate information
+        for candidate in candidate_list:
+            if candidate[3] == vote:
+                builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
     if page7 == data:
         print("Page 7")
         #submit vote
@@ -169,11 +178,10 @@ def prepare_handler(widget, data):
             #store in database
             #update voter id has voted
 
-def on_button_toggled(c_id):
-    global vote, candidate_list
-    vote = c_id
-    print(candidate_list)
-    print(c_id)
+def on_button_toggled(button, c_id):
+    global vote
+    if button.get_active():
+        vote = c_id
 
 def check_id_input(widget):
     new_text = widget.get_text()

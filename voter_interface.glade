@@ -186,6 +186,8 @@ Voting by Aliens 18 U.S.C. § 611</property>
       <object class="GtkBox" id="box6">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="margin_left">25</property>
+        <property name="margin_right">25</property>
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkLabel" id="label">
