@@ -200,6 +200,15 @@ def check_id_input(widget):
     else:
         assistant.set_page_complete(page4, False)
 
+def show_login_window():
+    login_template = Gtk.Builder()
+    login_template.add_from_file("admin_objects.glade")
+    login = login_template.get_object("button_login")
+    login.connect("clicked", login_clicked)
+    login_template.get_object("entry_username").connect("activate", login_clicked)
+    login_template.get_object("entry_password").connect("activate", login_clicked)
+    builder.get_object("box1").pack_end(login_template.get_object("admin_grid"), False, False, 0)
+
 builder = Gtk.Builder()
 
 if is_admin():
@@ -207,15 +216,10 @@ if is_admin():
     quit_menu_option = builder.get_object("quit_menu")
     quit_menu_option.connect("activate", program_quit)
 
-    login_template = Gtk.Builder()
-    login_template.add_from_file("admin_objects.glade")
-    login = login_template.get_object("button_login")
-    login.connect("clicked", login_clicked)
-    login_template.get_object("entry_username").connect("activate", login_clicked)
-    login_template.get_object("entry_password").connect("activate", login_clicked)
+    show_login_window()
 
-    builder.get_object("box1").pack_end(login_template.get_object("admin_grid"), False, False, 0)
 else:
+
     builder.add_from_file("voter_interface.glade")
 
     assistant = builder.get_object("main_window")
