@@ -45,7 +45,7 @@ def is_admin():
 def login_thread():
     if is_admin():
         print("Attempting to log in...")
-        #TODO implement login function
+        #verify against mysql - login function
         try:
             global cnx
             cnx = mysql.connector.connect(
