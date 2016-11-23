@@ -42,7 +42,7 @@ def is_admin():
     return is_admin
 
 def login_clicked(button):
-    spinner = builder.get_object("spinner1")
+    spinner = login_template.get_object("spinner1")
     spinner.start()
     if is_admin():
         print("Attempting to log in...")
@@ -51,8 +51,8 @@ def login_clicked(button):
             global cnx
             cnx = mysql.connector.connect(
                 host='159.203.140.245',
-                user=builder.get_object("entry_username").get_text(),
-                password=builder.get_object("entry_password").get_text(),
+                user=login_template.get_object("entry_username").get_text(),
+                password=login_template.get_object("entry_password").get_text(),
                 database='evoting',
                 auth_plugin='sha256_password',
                 ssl_ca='ca.pem',
@@ -61,6 +61,8 @@ def login_clicked(button):
                 ssl_verify_cert=True
             )
             login.set_label("Logged In!")
+            builder.get_object("users_menuitem").set_sensitive(True)
+            builder.get_object("results_menuitem").set_sensitive(True)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
@@ -202,12 +204,17 @@ builder = Gtk.Builder()
 
 if is_admin():
     builder.add_from_file("admin_login.glade")
-    login = builder.get_object("button_login")
-    login.connect("clicked", login_clicked)
-    builder.get_object("entry_username").connect("activate", login_clicked)
-    builder.get_object("entry_password").connect("activate", login_clicked)
-    quit_menu_option = builder.get_object("imagemenuitem3")
+    quit_menu_option = builder.get_object("quit_menu")
     quit_menu_option.connect("activate", program_quit)
+
+    login_template = Gtk.Builder()
+    login_template.add_from_file("admin_objects.glade")
+    login = login_template.get_object("button_login")
+    login.connect("clicked", login_clicked)
+    login_template.get_object("entry_username").connect("activate", login_clicked)
+    login_template.get_object("entry_password").connect("activate", login_clicked)
+
+    builder.get_object("box1").pack_end(login_template.get_object("admin_grid"), False, False, 0)
 else:
     builder.add_from_file("voter_interface.glade")
 
