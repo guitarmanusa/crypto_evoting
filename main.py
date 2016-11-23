@@ -1,4 +1,4 @@
-import ctypes, os, sys, time #time is for sleep(), remove in production
+import ctypes, os, sys, threading
 try:
     import gi
 except ImportError:
@@ -42,10 +42,7 @@ def is_admin():
      is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     return is_admin
 
-def login_clicked(button):
-    global window_template
-    spinner = window_template.get_object("spinner1")
-    spinner.start()
+def login_thread():
     if is_admin():
         print("Attempting to log in...")
         #TODO implement login function
@@ -67,19 +64,27 @@ def login_clicked(button):
             builder.get_object("results_menuitem").set_sensitive(True)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                window_template.get_object("login_error_label").set_text("Something is wrong with your user name or password!")
                 print("Something is wrong with your user name or password")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
             else:
                 print(err)
-        spinner.stop()
+        window_template.get_object("spinner1").stop()
     else:
-        spinner.stop()
+        window_template.get_object("spinner1").stop()
         dialog = Gtk.MessageDialog(button.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
         dialog.format_secondary_text("User must have administrator privileges to log in.")
         dialog.run()
         print("ERROR dialog closed")
         dialog.destroy()
+
+def login_clicked(button):
+    window_template.get_object("login_error_label").set_text("Attempting to log in...")
+    window_template.get_object("spinner1").start()
+    thread = threading.Thread(target=login_thread)
+    thread.daemon = True
+    thread.start()
 
 def apply_button_clicked(assistant):
     print("The 'Apply' button has been clicked")
