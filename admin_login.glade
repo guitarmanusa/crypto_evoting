@@ -56,6 +56,7 @@
                         <property name="can_focus">False</property>
                         <property name="image">image2</property>
                         <property name="use_stock">False</property>
+                        <signal name="select" handler="logout" swapped="no"/>
                       </object>
                     </child>
                     <child>

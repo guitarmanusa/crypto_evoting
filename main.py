@@ -25,6 +25,7 @@ cnx = None
 candidate_list = None
 vote = None
 candidates_populated = False
+window_template = None
 
 def program_quit(self=None, widget=None):
     try:
@@ -42,7 +43,8 @@ def is_admin():
     return is_admin
 
 def login_clicked(button):
-    spinner = login_template.get_object("spinner1")
+    global window_template
+    spinner = window_template.get_object("spinner1")
     spinner.start()
     if is_admin():
         print("Attempting to log in...")
@@ -51,8 +53,8 @@ def login_clicked(button):
             global cnx
             cnx = mysql.connector.connect(
                 host='159.203.140.245',
-                user=login_template.get_object("entry_username").get_text(),
-                password=login_template.get_object("entry_password").get_text(),
+                user=window_template.get_object("entry_username").get_text(),
+                password=window_template.get_object("entry_password").get_text(),
                 database='evoting',
                 auth_plugin='sha256_password',
                 ssl_ca='ca.pem',
@@ -201,13 +203,31 @@ def check_id_input(widget):
         assistant.set_page_complete(page4, False)
 
 def show_login_window():
-    login_template = Gtk.Builder()
-    login_template.add_from_file("admin_objects.glade")
-    login = login_template.get_object("button_login")
+    global window_template
+    window_template = None
+    window_template = Gtk.Builder()
+    window_template.add_from_file("admin_objects.glade")
+    login = window_template.get_object("button_login")
     login.connect("clicked", login_clicked)
-    login_template.get_object("entry_username").connect("activate", login_clicked)
-    login_template.get_object("entry_password").connect("activate", login_clicked)
-    builder.get_object("box1").pack_end(login_template.get_object("admin_grid"), False, False, 0)
+    window_template.get_object("entry_username").connect("activate", login_clicked)
+    window_template.get_object("entry_password").connect("activate", login_clicked)
+    builder.get_object("box1").pack_end(window_template.get_object("admin_grid"), False, False, 0)
+
+def logout(self):
+    #close MySQL connection
+    try:
+        global cnx
+        cnx.close()
+    except AttributeError:
+        pass
+    builder.get_object("users_menuitem").set_sensitive(False)
+    builder.get_object("results_menuitem").set_sensitive(False)
+    #delete child
+    builder.get_object("box1").remove(
+        builder.get_object("box1").get_children()[-1]
+    )
+    show_login_window()
+    window_template.get_object("entry_username").grab_focus()
 
 builder = Gtk.Builder()
 
@@ -215,11 +235,11 @@ if is_admin():
     builder.add_from_file("admin_login.glade")
     quit_menu_option = builder.get_object("quit_menu")
     quit_menu_option.connect("activate", program_quit)
+    builder.get_object("logout_menu").connect("activate", logout)
 
     show_login_window()
 
 else:
-
     builder.add_from_file("voter_interface.glade")
 
     assistant = builder.get_object("main_window")
