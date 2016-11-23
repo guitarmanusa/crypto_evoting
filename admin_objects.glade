@@ -75,7 +75,7 @@
       </object>
       <packing>
         <property name="left_attach">1</property>
-        <property name="top_attach">4</property>
+        <property name="top_attach">3</property>
       </packing>
     </child>
     <child>
@@ -85,7 +85,19 @@
       </object>
       <packing>
         <property name="left_attach">0</property>
+        <property name="top_attach">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="login_error_label">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="margin_top">20</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
         <property name="top_attach">4</property>
+        <property name="width">2</property>
       </packing>
     </child>
     <child>
@@ -94,16 +106,5 @@
     <child>
       <placeholder/>
     </child>
-    <child>
-      <placeholder/>
-    </child>
-    <child>
-      <placeholder/>
-    </child>
   </object>
-  <!--<packing>
-    <property name="expand">False</property>
-    <property name="fill">True</property>
-    <property name="position">1</property>
-  </packing>-->
 </interface>
