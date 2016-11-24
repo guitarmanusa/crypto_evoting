@@ -42,18 +42,20 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkImageMenuItem" id="login_menu">
-                        <property name="label" translatable="yes">Login</property>
+                        <property name="label" translatable="yes">_Login</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image1</property>
                         <property name="use_stock">False</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="logout_menu">
-                        <property name="label" translatable="yes">Logout</property>
+                        <property name="label" translatable="yes">L_ogout</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image2</property>
                         <property name="use_stock">False</property>
                         <signal name="select" handler="logout" swapped="no"/>
@@ -80,27 +82,26 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="users_menuitem">
+              <object class="GtkMenuItem" id="voters_menuitem">
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">_Users</property>
+                <property name="label" translatable="yes">_Voters</property>
                 <property name="use_underline">True</property>
                 <child type="submenu">
-                  <object class="GtkMenu" id="users_menu">
+                  <object class="GtkMenu" id="voters_menu">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="add_user_menu">
+                      <object class="GtkImageMenuItem" id="add_voter_menu">
                         <property name="label">gtk-add</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="delete_user_menu">
+                      <object class="GtkImageMenuItem" id="delete_voter_menu">
                         <property name="label">gtk-delete</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -109,7 +110,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="edit_user_menu">
+                      <object class="GtkImageMenuItem" id="edit_voter_menu">
                         <property name="label">gtk-edit</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -118,7 +119,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="find_user_menu">
+                      <object class="GtkImageMenuItem" id="find_voter_menu">
                         <property name="label">gtk-find</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -199,6 +200,18 @@
             <property name="fill">False</property>
             <property name="pack_type">end</property>
             <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSeparator" id="separator1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </object>

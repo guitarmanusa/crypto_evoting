@@ -65,7 +65,7 @@
     </child>
     <child>
       <object class="GtkButton" id="button_login">
-        <property name="label" translatable="yes">Log In</property>
+        <property name="label" translatable="yes">_Login</property>
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
@@ -73,6 +73,7 @@
         <property name="margin_left">57</property>
         <property name="margin_right">57</property>
         <property name="margin_top">20</property>
+        <property name="use_underline">True</property>
         <property name="yalign">0.44999998807907104</property>
       </object>
       <packing>

@@ -59,11 +59,11 @@ def login_thread():
                 ssl_key='client-key.pem',
                 ssl_verify_cert=True
             )
-            builder.get_object("users_menuitem").set_sensitive(True)
+            builder.get_object("voters_menuitem").set_sensitive(True)
             builder.get_object("results_menuitem").set_sensitive(True)
-            builder.get_object("box1").remove(
-                builder.get_object("box1").get_children()[-2]
-            )
+            for child in builder.get_object("box1").get_children():
+                if type(child) is gi.repository.Gtk.Grid:
+                    builder.get_object("box1").remove(child)
             builder.get_object("logged_in_as_label").set_text(
                 "Logged in as: " + window_template.get_object("entry_username").get_text()
             )
@@ -240,12 +240,13 @@ def logout(self):
         cnx.close()
     except AttributeError:
         pass
-    builder.get_object("users_menuitem").set_sensitive(False)
+    builder.get_object("voters_menuitem").set_sensitive(False)
     builder.get_object("results_menuitem").set_sensitive(False)
     #delete child
-    builder.get_object("box1").remove(
-        builder.get_object("box1").get_children()[-1]
-    )
+    for child in builder.get_object("box1").get_children():
+        if type(child) is gi.repository.Gtk.Grid:
+            builder.get_object("box1").remove(child)
+    builder.get_object("logged_in_as_label").set_text("")
     show_login_window()
     window_template.get_object("entry_username").grab_focus()
 
