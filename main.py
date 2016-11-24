@@ -59,9 +59,14 @@ def login_thread():
                 ssl_key='client-key.pem',
                 ssl_verify_cert=True
             )
-            login.set_label("Logged In!")
             builder.get_object("users_menuitem").set_sensitive(True)
             builder.get_object("results_menuitem").set_sensitive(True)
+            builder.get_object("box1").remove(
+                builder.get_object("box1").get_children()[-2]
+            )
+            builder.get_object("logged_in_as_label").set_text(
+                "Logged in as: " + window_template.get_object("entry_username").get_text()
+            )
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 window_template.get_object("login_error_label").set_text("Something is wrong with your user name or password!")
