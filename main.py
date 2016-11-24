@@ -91,6 +91,11 @@ def login_clicked(button):
     thread.daemon = True
     thread.start()
 
+def show_add_voter(widget):
+    add_voter_template = Gtk.Builder()
+    add_voter_template.add_from_file("add_voter.glade")
+    builder.get_object("box1").pack_start(add_voter_template.get_object("grid1"), False, False, 0)
+
 def apply_button_clicked(assistant):
     print("The 'Apply' button has been clicked")
 
@@ -954,6 +959,7 @@ if is_admin():
     quit_menu_option.connect("activate", program_quit)
     builder.get_object("logout_menu").connect("activate", logout)
     builder.get_object("about_menuitem").connect("activate", show_about)
+    builder.get_object("add_voter_menu").connect("activate", show_add_voter)
     show_login_window()
 
 else:
