@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.19.0 -->
+<interface>
+  <requires lib="gtk+" version="3.12"/>
+  <object class="GtkListStore" id="liststore_suffix">
+    <columns>
+      <!-- column-name suffix -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes"></col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Sr.</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Jr.</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">II</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">III</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">IV</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">V</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">VI</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">VII</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">VIII</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">IX</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">X</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkGrid" id="grid1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkLabel" id="label_find_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">20</property>
+        <property name="margin_top">20</property>
+        <property name="label" translatable="yes">Please enter the Personally Identifying information of the voter you are attempting to locate:</property>
+        <property name="wrap">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">0</property>
+        <property name="width">2</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="label_first_name_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">30</property>
+        <property name="margin_top">10</property>
+        <property name="label" translatable="yes">First name:</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="label_middle_name_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">30</property>
+        <property name="margin_top">5</property>
+        <property name="label" translatable="yes">Middle name:</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">2</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="label_last_name_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">30</property>
+        <property name="margin_top">5</property>
+        <property name="label" translatable="yes">Last name:</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="label_suffix_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">30</property>
+        <property name="margin_top">5</property>
+        <property name="label" translatable="yes">Suffix:</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="label_dob_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">30</property>
+        <property name="margin_top">5</property>
+        <property name="label" translatable="yes">D.O.B.:</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">5</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="label_address_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">30</property>
+        <property name="margin_top">5</property>
+        <property name="label" translatable="yes">Mailing Address:</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">6</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="label_ssn_voter">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_left">30</property>
+        <property name="margin_top">5</property>
+        <property name="label" translatable="yes">SSN:</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">7</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="entry_first_name">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="margin_right">15</property>
+        <property name="margin_top">10</property>
+        <property name="hexpand">True</property>
+        <property name="max_length">60</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="entry_middle_name">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="margin_right">15</property>
+        <property name="margin_top">5</property>
+        <property name="max_length">60</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">2</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="entry_last_name">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="margin_right">15</property>
+        <property name="margin_top">5</property>
+        <property name="max_length">60</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">3</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkComboBox" id="combobox_suffix">
+        <property name="width_request">20</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">start</property>
+        <property name="margin_right">15</property>
+        <property name="margin_top">5</property>
+        <property name="model">liststore_suffix</property>
+        <child>
+          <object class="GtkCellRendererText" id="cellrenderertext1"/>
+          <attributes>
+            <attribute name="text">0</attribute>
+          </attributes>
+        </child>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">4</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkCalendar" id="calendar1">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="halign">start</property>
+        <property name="margin_right">15</property>
+        <property name="margin_top">5</property>
+        <property name="year">2016</property>
+        <property name="month">10</property>
+        <property name="day">24</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">5</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="entry_address">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="margin_right">15</property>
+        <property name="margin_top">5</property>
+        <property name="max_length">80</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">6</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkEntry" id="entry_ssn">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="margin_right">15</property>
+        <property name="margin_top">5</property>
+        <property name="max_length">12</property>
+        <property name="width_chars">12</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">7</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="button_find_voter">
+        <property name="label">gtk-find</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="halign">start</property>
+        <property name="margin_left">15</property>
+        <property name="margin_right">25</property>
+        <property name="margin_top">28</property>
+        <property name="margin_bottom">15</property>
+        <property name="use_stock">True</property>
+        <property name="always_show_image">True</property>
+      </object>
+      <packing>
+        <property name="left_attach">1</property>
+        <property name="top_attach">8</property>
+      </packing>
+    </child>
+    <child>
+      <placeholder/>
+    </child>
+  </object>
+</interface>

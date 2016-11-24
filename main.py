@@ -61,9 +61,7 @@ def login_thread():
             )
             builder.get_object("voters_menuitem").set_sensitive(True)
             builder.get_object("results_menuitem").set_sensitive(True)
-            for child in builder.get_object("box1").get_children():
-                if type(child) is gi.repository.Gtk.Grid:
-                    builder.get_object("box1").remove(child)
+            delete_admin_main_window()
             builder.get_object("logged_in_as_label").set_text(
                 "Logged in as: " + window_template.get_object("entry_username").get_text()
             )
@@ -91,10 +89,22 @@ def login_clicked(button):
     thread.daemon = True
     thread.start()
 
+def delete_admin_main_window():
+    for child in builder.get_object("box1").get_children():
+        if type(child) is gi.repository.Gtk.Grid:
+            builder.get_object("box1").remove(child)
+
 def show_add_voter(widget):
     add_voter_template = Gtk.Builder()
     add_voter_template.add_from_file("add_voter.glade")
+    delete_admin_main_window()
     builder.get_object("box1").pack_start(add_voter_template.get_object("grid1"), False, False, 0)
+
+def show_find_voter(widget):
+    find_voter_template = Gtk.Builder()
+    find_voter_template.add_from_file("find_voter.glade")
+    delete_admin_main_window()
+    builder.get_object("box1").pack_start(find_voter_template.get_object("grid1"), False, False, 0)
 
 def apply_button_clicked(assistant):
     print("The 'Apply' button has been clicked")
@@ -248,9 +258,7 @@ def logout(self):
     builder.get_object("voters_menuitem").set_sensitive(False)
     builder.get_object("results_menuitem").set_sensitive(False)
     #delete child
-    for child in builder.get_object("box1").get_children():
-        if type(child) is gi.repository.Gtk.Grid:
-            builder.get_object("box1").remove(child)
+    delete_admin_main_window()
     builder.get_object("logged_in_as_label").set_text("")
     show_login_window()
     window_template.get_object("entry_username").grab_focus()
@@ -960,6 +968,7 @@ if is_admin():
     builder.get_object("logout_menu").connect("activate", logout)
     builder.get_object("about_menuitem").connect("activate", show_about)
     builder.get_object("add_voter_menu").connect("activate", show_add_voter)
+    builder.get_object("find_voter_menu").connect("activate", show_find_voter)
     show_login_window()
 
 else:
