@@ -25,7 +25,6 @@ cnx = None
 candidate_list = None
 vote = None
 candidates_populated = False
-window_template = None
 
 def program_quit(self=None, widget=None):
     try:
@@ -50,8 +49,8 @@ def login_thread():
             global cnx
             cnx = mysql.connector.connect(
                 host='159.203.140.245',
-                user=window_template.get_object("entry_username").get_text(),
-                password=window_template.get_object("entry_password").get_text(),
+                user=builder.get_object("login_entry_username").get_text(),
+                password=builder.get_object("login_entry_password").get_text(),
                 database='evoting',
                 auth_plugin='sha256_password',
                 ssl_ca='ca.pem',
@@ -63,19 +62,19 @@ def login_thread():
             builder.get_object("results_menuitem").set_sensitive(True)
             delete_admin_main_window()
             builder.get_object("logged_in_as_label").set_text(
-                "Logged in as: " + window_template.get_object("entry_username").get_text()
+                "Logged in as: " + builder.get_object("login_entry_username").get_text()
             )
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                window_template.get_object("login_error_label").set_text("Something is wrong with your user name or password!")
+                builder.get_object("login_error_label").set_text("Something is wrong with your user name or password!")
                 print("Something is wrong with your user name or password")
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
             else:
                 print(err)
-        window_template.get_object("spinner1").stop()
+        builder.get_object("login_spinner").stop()
     else:
-        window_template.get_object("spinner1").stop()
+        builder.get_object("login_spinner").stop()
         dialog = Gtk.MessageDialog(button.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
         dialog.format_secondary_text("User must have administrator privileges to log in.")
         dialog.run()
@@ -83,8 +82,8 @@ def login_thread():
         dialog.destroy()
 
 def login_clicked(button):
-    window_template.get_object("login_error_label").set_text("Attempting to log in...")
-    window_template.get_object("spinner1").start()
+    builder.get_object("login_error_label").set_text("Attempting to log in...")
+    builder.get_object("login_spinner").start()
     thread = threading.Thread(target=login_thread)
     thread.daemon = True
     thread.start()
@@ -95,16 +94,80 @@ def delete_admin_main_window():
             builder.get_object("box1").remove(child)
 
 def show_add_voter(widget):
-    add_voter_template = Gtk.Builder()
-    add_voter_template.add_from_file("add_voter.glade")
     delete_admin_main_window()
-    builder.get_object("box1").pack_start(add_voter_template.get_object("grid1"), False, False, 0)
+    builder.get_object("box1").pack_start(
+        builder.get_object("add_voter_grid"), False, False, 0
+    )
+    builder.get_object("button_add_voter").connect("clicked", add_voter)
+    builder.get_object("entry_first_name").set_text("")
+    builder.get_object("entry_middle_name").set_text("")
+    builder.get_object("entry_last_name").set_text("")
+    builder.get_object("combobox_suffix").set_active(0)
+    #TODO reset calendar
+    builder.get_object("entry_address").set_text("")
+    builder.get_object("entry_ssn").set_text("")
+
+def add_voter(widget):
+    #TODO implement
+    print("Adding voter...")
 
 def show_find_voter(widget):
-    find_voter_template = Gtk.Builder()
-    find_voter_template.add_from_file("find_voter.glade")
     delete_admin_main_window()
-    builder.get_object("box1").pack_start(find_voter_template.get_object("grid1"), False, False, 0)
+    builder.get_object("box1").pack_start(
+        builder.get_object("find_voter_grid"), False, False, 0
+    )
+    builder.get_object("entry_find_first_name").set_text("")
+    builder.get_object("entry_find_middle_name").set_text("")
+    builder.get_object("entry_find_last_name").set_text("")
+    builder.get_object("combobox_find_suffix").set_active(0)
+    #TODO reset calendar
+    builder.get_object("entry_find_address").set_text("")
+    builder.get_object("entry_find_ssn").set_text("")
+
+def show_delete_voter(widget):
+    delete_admin_main_window()
+    builder.get_object("box1").pack_start(
+        builder.get_object("delete_voter_grid"), True, True, 0
+    )
+    builder.get_object("entry_delete_voter_id").connect("changed", check_delete_id)
+    builder.get_object("entry_delete_voter_id").connect("activate", check_delete_id)
+    builder.get_object("button_delete_voter").connect("clicked", delete_voter)
+    builder.get_object("entry_delete_voter_id").grab_focus()
+
+def check_delete_id(widget):
+    new_text = sanitize_id(widget)
+    if len(new_text) == 10:
+        builder.get_object("button_delete_voter").set_sensitive(True)
+    elif len(new_text) < 10:
+        builder.get_object("button_delete_voter").set_sensitive(False)
+    if builder.get_object("button_delete_voter").get_sensitive():
+        delete_voter(widget)
+
+def check_edit_id(widget):
+    new_text = sanitize_id(widget)
+    if len(new_text) == 10:
+        builder.get_object("button_edit_voter").set_sensitive(True)
+
+def show_edit_voter(widget):
+    delete_admin_main_window()
+    builder.get_object("box1").pack_start(
+        builder.get_object("edit_voter_grid"), True, True, 0
+    )
+    builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
+    builder.get_object("button_edit_voter").connect("clicked", edit_voter)
+
+def edit_voter(widget):
+    delete_admin_main_window()
+    builder.get_object("box1").pack_start(
+        builder.get_object("edit_voter_details_grid"), False, False, 0
+    )
+    builder.get_object("button_save_edit_voter").connect("clicked", save_edit_voter)
+
+def save_edit_voter(widget):
+    print("Saving updated voter information...TODO.")
+
+def delete_voter(widget):
+    print("Deleting voter number " + builder.get_object("entry_delete_voter_id").get_text())
 
 def apply_button_clicked(assistant):
     print("The 'Apply' button has been clicked")
@@ -222,7 +285,7 @@ def on_button_toggled(button, c_id):
     if button.get_active():
         vote = c_id
 
-def check_id_input(widget):
+def sanitize_id(widget):
     new_text = widget.get_text()
     i = 0;
     while i < len(new_text):
@@ -232,21 +295,25 @@ def check_id_input(widget):
             new_text = new_text[:i] + new_text[(i+1):]
         i = i + 1
     widget.set_text(new_text)
+    return new_text
+
+def check_id_input(widget):
+    new_text = sanitize_id(widget)
     if len(new_text) == 10:
         assistant.set_page_complete(page4, True)
     else:
         assistant.set_page_complete(page4, False)
 
 def show_login_window():
-    global window_template
-    window_template = None
-    window_template = Gtk.Builder()
-    window_template.add_from_file("admin_objects.glade")
-    login = window_template.get_object("button_login")
-    login.connect("clicked", login_clicked)
-    window_template.get_object("entry_username").connect("activate", login_clicked)
-    window_template.get_object("entry_password").connect("activate", login_clicked)
-    builder.get_object("box1").pack_end(window_template.get_object("admin_grid"), False, False, 0)
+    builder.get_object("button_login").connect("clicked", login_clicked)
+    builder.get_object("login_entry_username").connect("activate", login_clicked)
+    builder.get_object("login_entry_password").connect("activate", login_clicked)
+    builder.get_object("login_entry_username").set_text("")
+    builder.get_object("login_entry_password").set_text("")
+    builder.get_object("box1").pack_end(
+        builder.get_object("login_grid"), False, False, 0
+    )
+    builder.get_object("login_error_label").set_text("")
 
 def logout(self):
     #close MySQL connection
@@ -261,7 +328,7 @@ def logout(self):
     delete_admin_main_window()
     builder.get_object("logged_in_as_label").set_text("")
     show_login_window()
-    window_template.get_object("entry_username").grab_focus()
+    builder.get_object("login_entry_username").grab_focus()
 
 def show_about(widget):
     aboutdialog = Gtk.AboutDialog()
@@ -962,13 +1029,15 @@ def close_about(widget, action):
 builder = Gtk.Builder()
 
 if is_admin():
-    builder.add_from_file("admin_login.glade")
+    builder.add_from_file("admin.glade")
     quit_menu_option = builder.get_object("quit_menu")
     quit_menu_option.connect("activate", program_quit)
     builder.get_object("logout_menu").connect("activate", logout)
     builder.get_object("about_menuitem").connect("activate", show_about)
     builder.get_object("add_voter_menu").connect("activate", show_add_voter)
+    builder.get_object("edit_voter_menu").connect("activate", show_edit_voter)
     builder.get_object("find_voter_menu").connect("activate", show_find_voter)
+    builder.get_object("delete_voter_menu").connect("activate", show_delete_voter)
     show_login_window()
 
 else:
