@@ -101,7 +101,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
           </packing>
         </child>
         <child>
-          <object class="GtkEntry" id="entry1">
+          <object class="GtkEntry" id="entry_first_name">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="margin_right">60</property>
@@ -114,7 +114,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
           </packing>
         </child>
         <child>
-          <object class="GtkEntry" id="entry2">
+          <object class="GtkEntry" id="entry_middle_name">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="margin_right">60</property>
@@ -126,7 +126,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
           </packing>
         </child>
         <child>
-          <object class="GtkEntry" id="entry3">
+          <object class="GtkEntry" id="entry_last_name">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="margin_right">60</property>
@@ -138,7 +138,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
           </packing>
         </child>
         <child>
-          <object class="GtkEntry" id="entry4">
+          <object class="GtkEntry" id="entry_suffix">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="margin_right">60</property>
@@ -222,7 +222,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
           </packing>
         </child>
         <child>
-          <object class="GtkEntry" id="entry5">
+          <object class="GtkEntry" id="entry_voter_id">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="margin_right">60</property>
@@ -236,6 +236,7 @@ Voting by Aliens 18 U.S.C. § 611</property>
         </child>
       </object>
       <packing>
+        <property name="page_type">progress</property>
         <property name="has_padding">False</property>
       </packing>
     </child>

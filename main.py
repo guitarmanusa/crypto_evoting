@@ -180,29 +180,50 @@ def cancel_button_clicked(assistant):
     print("The 'Cancel' button has been clicked")
     program_quit()
 
-def validate_user_id(id):
+def validate_voter_id(voter_id):
+    int_id = int(voter_id)
     #query voter table and check if voter already voted
-    #TODO
-    print(id)
-    return True
+    try:
+        global cnx
+        cnx = mysql.connector.connect(
+            host='159.203.140.245',
+            port='3306',
+            user='read_candidates',
+            password='GiantMeteor2016!@',
+            database='evoting',
+            auth_plugin='sha256_password',
+            ssl_ca='ca.pem',
+            ssl_cert='client-cert.pem',
+            ssl_key='client-key.pem',
+            ssl_verify_cert=True
+        )
+        query = ("SELECT voter_id, first_name, middle_name, last_name, suffix, has_voted from registered_voters")
+        cursor = cnx.cursor()
+        cursor.execute(query)
+        for (v_id, first_name, middle_name, last_name, suffix, voted) in list(cursor):
+            if (v_id == int_id
+                and first_name == builder.get_object("entry_first_name").get_text()
+                and middle_name == builder.get_object("entry_middle_name").get_text()
+                and last_name == builder.get_object("entry_last_name").get_text()
+                and suffix == builder.get_object("entry_suffix").get_text()
+                ):
+                if voted == 0:
+                    return "valid_non_voted"
+                return "valid_voted"
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+    return "invalid"
 
 def load_candidates():
     global candidate_list
     if (candidate_list == None):
         try:
             global cnx
-            cnx = mysql.connector.connect(
-                host='159.203.140.245',
-                port='3306',
-                user='read_candidates',
-                password='GiantMeteor2016!@',
-                database='evoting',
-                auth_plugin='sha256_password',
-                ssl_ca='ca.pem',
-                ssl_cert='client-cert.pem',
-                ssl_key='client-key.pem',
-                ssl_verify_cert=True
-            )
             cursor = cnx.cursor()
             query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
             cursor.execute(query)
@@ -234,24 +255,30 @@ def load_candidates():
         page5.show_all()
         candidate_list.append(("None of the above", "None", "None", None))
         candidates_populated = True
-    else:
-        print("Error, Candidates list is empty.")
     assistant.set_page_complete(page5, True)
 
 def prepare_handler(widget, data):
     if page4 == data:
-        builder.get_object("entry4").connect("activate", lambda x: builder.get_object("assistant-action_area1").grab_focus())
+        builder.get_object("entry_voter_id").connect("activate", lambda x: builder.get_object("assistant-action_area1").grab_focus())
     if page5 == data:
         print("Validate Unique User ID...")
-        if validate_user_id(builder.get_object("entry4").get_text()):
+        valid_id_response = validate_voter_id(builder.get_object("entry_voter_id").get_text())
+        if valid_id_response == "valid_non_voted":
             builder.get_object("spinner1").start()
             print("Spinner started...")
             thread = threading.Thread(target=load_candidates)
             thread.daemon = True
             thread.start()
-        else:
-            dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Insufficient Permissions")
-            dialog.format_secondary_text("User ID " + builder.get_object("entry4").get_text() + " has already voted.")
+        elif valid_id_response == "valid_voted":
+            dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Possible Voter Fraud")
+            dialog.format_secondary_text("Voter ID " + builder.get_object("entry_voter_id").get_text() + " has already voted.")
+            dialog.run()
+            print("ERROR dialog closed")
+            dialog.destroy()
+            assistant.previous_page()
+        elif valid_id_response == "invalid":
+            dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Unable to validate")
+            dialog.format_secondary_text("Unable to validate voter ID " + builder.get_object("entry_voter_id").get_text() + " with the information provided.  Please try again.")
             dialog.run()
             print("ERROR dialog closed")
             dialog.destroy()
@@ -1059,7 +1086,7 @@ else:
     assistant.set_page_complete(page3, True)
 
     page4 = builder.get_object("grid1")
-    builder.get_object("entry5").connect("changed", check_id_input)
+    builder.get_object("entry_voter_id").connect("changed", check_id_input)
     assistant.set_page_complete(page4, False)
 
     page5 = builder.get_object("box5")
