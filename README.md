@@ -46,7 +46,7 @@ Windows:
 
 Linux:
 1. Install dependencies
-   1. apt-get install python python-gi python-pip libmpc-dev libmpfr-dev libgtk-3-dev
+   1. apt-get install python3 python3-gi python3-pip libmpc-dev libmpfr-dev libgtk-3-dev
 1. Install MySQL connector
 2. Install phe, cx_Freeze
 3. To run from source
