@@ -63,9 +63,9 @@ Linux:
 3. Install phe, cx_Freeze
    1. To run from source
       1. python3 main.py
-4. To build
-   1. python3 setup.py build
-5. Installer (? deb)
+   2. To build
+      1. python3 setup.py build
+4. Installer (? deb)
 
 Mac:
 1. ?
