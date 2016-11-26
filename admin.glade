@@ -328,50 +328,6 @@
     </child>
   </object>
   <!-- add voter UI -->
-  <object class="GtkListStore" id="liststore_suffix">
-    <columns>
-      <!-- column-name suffix -->
-      <column type="gchararray"/>
-    </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes"></col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">Sr.</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">Jr.</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">II</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">III</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">IV</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">V</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">VI</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">VII</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">VIII</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">IX</col>
-      </row>
-      <row>
-        <col id="0" translatable="yes">X</col>
-      </row>
-    </data>
-  </object>
   <object class="GtkGrid" id="add_voter_grid">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -529,20 +485,27 @@
       </packing>
     </child>
     <child>
-      <object class="GtkComboBox" id="combobox_suffix">
+      <object class="GtkComboBoxText" id="combobox_suffix">
         <property name="width_request">20</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="halign">start</property>
         <property name="margin_right">15</property>
         <property name="margin_top">5</property>
-        <property name="model">liststore_suffix</property>
-        <child>
-          <object class="GtkCellRendererText" id="cellrenderertext1"/>
-          <attributes>
-            <attribute name="text">0</attribute>
-          </attributes>
-        </child>
+        <items>
+          <item translatable="yes" id=" "> </item>
+          <item translatable="yes" id="Jr.">Jr.</item>
+          <item translatable="yes" id="Sr.">Sr.</item>
+          <item translatable="yes" id="II">II</item>
+          <item translatable="yes" id="III">III</item>
+          <item translatable="yes" id="IV">IV</item>
+          <item translatable="yes" id="V">V</item>
+          <item translatable="yes" id="VI">VI</item>
+          <item translatable="yes" id="VII">VII</item>
+          <item translatable="yes" id="VIII">VIII</item>
+          <item translatable="yes" id="IX">IX</item>
+          <item translatable="yes" id="X">X</item>
+        </items>
       </object>
       <packing>
         <property name="left_attach">1</property>
@@ -883,13 +846,20 @@
         <property name="halign">start</property>
         <property name="margin_right">15</property>
         <property name="margin_top">5</property>
-        <property name="model">liststore_suffix</property>
-        <child>
-          <object class="GtkCellRendererText" id="cellrenderer_edit"/>
-          <attributes>
-            <attribute name="text">0</attribute>
-          </attributes>
-        </child>
+        <items>
+          <item translatable="yes" id=" "> </item>
+          <item translatable="yes" id="Jr.">Jr.</item>
+          <item translatable="yes" id="Sr.">Sr.</item>
+          <item translatable="yes" id="II">II</item>
+          <item translatable="yes" id="III">III</item>
+          <item translatable="yes" id="IV">IV</item>
+          <item translatable="yes" id="V">V</item>
+          <item translatable="yes" id="VI">VI</item>
+          <item translatable="yes" id="VII">VII</item>
+          <item translatable="yes" id="VIII">VIII</item>
+          <item translatable="yes" id="IX">IX</item>
+          <item translatable="yes" id="X">X</item>
+        </items>
       </object>
       <packing>
         <property name="left_attach">1</property>
@@ -1128,13 +1098,20 @@
         <property name="halign">start</property>
         <property name="margin_right">15</property>
         <property name="margin_top">5</property>
-        <property name="model">liststore_suffix</property>
-        <child>
-          <object class="GtkCellRendererText" id="cellrenderer_find"/>
-          <attributes>
-            <attribute name="text">0</attribute>
-          </attributes>
-        </child>
+        <items>
+          <item translatable="yes" id=" "> </item>
+          <item translatable="yes" id="Jr.">Jr.</item>
+          <item translatable="yes" id="Sr.">Sr.</item>
+          <item translatable="yes" id="II">II</item>
+          <item translatable="yes" id="III">III</item>
+          <item translatable="yes" id="IV">IV</item>
+          <item translatable="yes" id="V">V</item>
+          <item translatable="yes" id="VI">VI</item>
+          <item translatable="yes" id="VII">VII</item>
+          <item translatable="yes" id="VIII">VIII</item>
+          <item translatable="yes" id="IX">IX</item>
+          <item translatable="yes" id="X">X</item>
+        </items>
       </object>
       <packing>
         <property name="left_attach">1</property>
