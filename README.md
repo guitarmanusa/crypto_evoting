@@ -59,13 +59,13 @@ Windows:
 Linux:
 1. Install dependencies
    1. # apt-get install python3 python3-gi python3-pip libmpc-dev libmpfr-dev libgtk-3-dev
-1. Install MySQL connector
-2. Install phe, cx_Freeze
-3. To run from source
-   1. python3 main.py
-1. To build
+2. Install MySQL connector
+3. Install phe, cx_Freeze
+   1. To run from source
+      1. python3 main.py
+4. To build
    1. python3 setup.py build
-1. Installer (? deb)
+5. Installer (? deb)
 
 Mac:
 1. ?
