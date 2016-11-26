@@ -839,7 +839,7 @@
       </packing>
     </child>
     <child>
-      <object class="GtkComboBox" id="combobox_edit_suffix">
+      <object class="GtkComboBoxText" id="combobox_edit_suffix">
         <property name="width_request">20</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
@@ -1091,7 +1091,7 @@
       </packing>
     </child>
     <child>
-      <object class="GtkComboBox" id="combobox_find_suffix">
+      <object class="GtkComboBoxText" id="combobox_find_suffix">
         <property name="width_request">20</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
