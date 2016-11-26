@@ -1,4 +1,6 @@
-import ctypes, os, sys, threading
+import ctypes, os, sys, threading, random
+from datetime import date
+from re import sub
 try:
     import gi
 except ImportError:
@@ -26,6 +28,7 @@ candidate_list = None
 vote = None
 candidates_populated = False
 previous_length = 0
+suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 
 def program_quit(self=None, widget=None):
     try:
@@ -99,19 +102,146 @@ def show_add_voter(widget):
     builder.get_object("box1").pack_start(
         builder.get_object("add_voter_grid"), False, False, 0
     )
-    builder.get_object("button_add_voter").connect("clicked", add_voter)
+    builder.get_object("button_add_voter").connect("clicked", req_add_voter)
     builder.get_object("entry_first_name").set_text("")
     builder.get_object("entry_middle_name").set_text("")
     builder.get_object("entry_last_name").set_text("")
     builder.get_object("combobox_suffix").set_active(0)
-    #TODO reset calendar
+    #reset calendar
+    today = date.today()
+    builder.get_object("calendar_add").select_day(today.day)
+    builder.get_object("calendar_add").select_month(today.month-1, today.year)
+    builder.get_object("calendar_add").clear_marks()
     builder.get_object("entry_address").set_text("")
     builder.get_object("entry_ssn").set_text("")
     builder.get_object("entry_ssn").connect("changed", format_ssn)
 
-def add_voter(widget):
-    #TODO implement
-    print("Adding voter...")
+def req_add_voter(widget):
+    print("Checking voter information...")
+    fname = builder.get_object("entry_first_name").get_text()
+    mname = builder.get_object("entry_middle_name").get_text()
+    if mname == "":
+        mname = "NMN"
+    lname = builder.get_object("entry_last_name").get_text()
+    suffix = builder.get_object("combobox_suffix").get_active_text()
+    dob = builder.get_object("calendar_add").get_date()
+    address = builder.get_object("entry_address").get_text()
+    ssn = builder.get_object("entry_ssn").get_text()
+    print(fname, mname, lname, suffix, dob, address, ssn)
+    if check_voter_info(widget, fname, lname, address, ssn):
+        submit_voter_info(widget, fname, mname, lname, suffix, dob, address, ssn)
+
+def check_voter_info(widget, fname, lname, address, ssn):
+    error_message = ""
+    if fname == "":
+        error_message = error_message + "First Name cannot be empty.\n"
+    if lname == "":
+        error_message = error_message + "Last Name cannot be empty.\n"
+    if address == "":
+        error_message = error_message + "Mailing address cannot be empty.\n"
+    if len(ssn) != 11:
+        error_message = error_message + "Incorrect SSN length."
+    if error_message == "":
+        return True
+    else:
+        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Problem with entry")
+        dialog.format_secondary_text("Please correct the following errors and re-submit.\n\n" + error_message)
+        dialog.run()
+        dialog.destroy()
+        return False
+
+def submit_voter_info(widget, fname, mname, lname, suffix, dob, address, ssn):
+    print("Everything looks good, submitting voter information...")
+    dob_str = str(dob[0]) + "-" + str(dob[1]+1) + "-" + str(dob[2])
+    #check that person doesn't already exist in DB
+    new_user_resp = check_dup_voter(fname, mname, lname, suffix, dob_str, address, ssn)
+    if new_user_resp == True:
+        #generate random, unique voter id
+        random.seed()
+        voter_id = random.randint(0,9999999999)
+        #check it doesn't already exist in system
+        is_good_voter_id = check_voter_id(voter_id) == False
+        while is_good_voter_id == False:
+            voter_id = random.randint(0,9999999999)
+            is_good_voter_id = check_voter_id(voter_id)
+        print(voter_id)
+        #send to MySQL database
+        try:
+            query = ("INSERT INTO registered_voters (voter_id, first_name, \
+                middle_name, last_name, suffix, address, birth, ssn, has_voted) \
+                VALUES (" + str(voter_id) + ", \"" + fname + "\", \"" + mname + "\", \"" + lname + \
+                "\", \"" + suffix + "\", \"" + address + "\", \"" + dob_str + "\", \"" + ssn + "\", 0)")
+            cursor = cnx.cursor()
+            cursor.execute(query)
+            cnx.commit()
+            cursor.close()
+            dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Registered Voter.")
+            dialog.format_secondary_text("Voter information summary:\n\nVoter ID: "+str(voter_id)+\
+                "\nFirst Name: "+fname+"\nMiddle Name: "+mname+"\nLast Name: "+lname+\
+                "\nSuffix :" + suffix +"\nAddress: "+address+"\nDOB: "+dob_str+"\nSSN: "+ssn)
+            dialog.run()
+            dialog.destroy()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+    else:
+        #User already existed in DB, show error message
+        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Unable to register voter.")
+        dialog.format_secondary_text(new_user_resp + " has already registered.")
+        dialog.run()
+        dialog.destroy()
+
+def check_dup_voter(fname, mname, lname, suffix, dob_str, address, ssn):
+    """Check if there is a user with the same PII or if SSN already exists in DB"""
+    global cnx
+    try:
+        query = ("SELECT ssn FROM registered_voters")
+        cursor = cnx.cursor()
+        cursor.execute(query)
+        for (ret_ssn) in list(cursor):
+            if ret_ssn[0] == ssn:
+                return "SSN"
+        query = ("SELECT first_name, middle_name, last_name, suffix, birth, address, ssn \
+            FROM registered_voters \
+            WHERE first_name = \"" + fname + "\" AND middle_name = \"" + mname + "\" AND " \
+            "last_name = \"" + lname + "\" AND suffix = \"" + suffix + "\" AND birth = \"" \
+            + dob_str + "\" AND ssn = \"" + ssn + "\"")
+        cursor.execute(query)
+        print("Length of duplicate voter list: ", len(list(cursor)))
+        if len(list(cursor)) > 0:
+            return "Voter"
+        else:
+            return True
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+
+def check_voter_id(voter_id):
+    global cnx
+    try:
+        query = ("SELECT voter_id FROM registered_voters")
+        cursor = cnx.cursor()
+        cursor.execute(query)
+        for v_id in list(cursor):
+            if voter_id == v_id:
+                return False
+        return True
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+        return False
 
 def show_find_voter(widget):
     delete_admin_main_window()
@@ -122,7 +252,11 @@ def show_find_voter(widget):
     builder.get_object("entry_find_middle_name").set_text("")
     builder.get_object("entry_find_last_name").set_text("")
     builder.get_object("combobox_find_suffix").set_active(0)
-    #TODO reset calendar
+    #reset calendar
+    today = date.today()
+    builder.get_object("calendar_find").select_day(today.day)
+    builder.get_object("calendar_find").select_month(today.month-1, today.year)
+    builder.get_object("calendar_find").clear_marks()
     builder.get_object("entry_find_address").set_text("")
     builder.get_object("entry_find_ssn").set_text("")
     builder.get_object("entry_find_ssn").connect("changed", format_ssn)
