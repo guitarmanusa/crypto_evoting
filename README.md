@@ -62,7 +62,7 @@ setup.sql
 
 CREATE DATABASE evoting;
 USE evoting;
-CREATE TABLE registered_voters (voter_id INT, first_name CHAR(60) NOT NULL, middle_name CHAR(60) NOT NULL, last_name CHAR(60) NOT NULL, suffix CHAR(4), address VARCHAR(80) NOT NULL, birth DATE NOT NULL, ssn VARCHAR(11), has_voted BOOL, PRIMARY KEY (voter_id));
+CREATE TABLE registered_voters (voter_id BIGINT, first_name CHAR(60) NOT NULL, middle_name CHAR(60) NOT NULL, last_name CHAR(60) NOT NULL, suffix CHAR(4), address VARCHAR(80) NOT NULL, birth DATE NOT NULL, ssn VARCHAR(11), has_voted BOOL, PRIMARY KEY (voter_id));
 CREATE TABLE candidates (pres_name VARCHAR(100) NOT NULL, vp_name VARCHAR(100) NOT NULL, party VARCHAR(60) NOT NULL, c_id TINYINT AUTO-INCREMENT NOT NULL, PRIMARY KEY (c_id));
 CREATE TABLE votes (unique_id SMALLINT, vote TYPE?? );  //will depend on candidates list
 
