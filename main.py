@@ -25,6 +25,7 @@ cnx = None
 candidate_list = None
 vote = None
 candidates_populated = False
+previous_length = 0
 
 def program_quit(self=None, widget=None):
     try:
@@ -124,7 +125,7 @@ def show_find_voter(widget):
     #TODO reset calendar
     builder.get_object("entry_find_address").set_text("")
     builder.get_object("entry_find_ssn").set_text("")
-    builder.get_object("entry_ssn").connect("changed", format_ssn)
+    builder.get_object("entry_find_ssn").connect("changed", format_ssn)
 
 def show_delete_voter(widget):
     delete_admin_main_window()
@@ -174,22 +175,20 @@ def edit_voter(widget):
     )
     builder.get_object("button_save_edit_voter").connect("clicked", save_edit_voter)
 
-previous_length = 0
-
 def format_ssn(widget):
-    print(previous_length)
-    if (len(widget.get_text()) == 3 or len(widget.get_text()) == 6) \
-        and widget.get_text()[-1] != "-" \
-        and previous_length != 4 and previous_length != 7:
-        print(widget.get_text()[-1])
+    if ((len(widget.get_text()) == 3 and previous_length != 4) \
+        or (len(widget.get_text()) == 6 and previous_length != 7)) \
+        and previous_length != 8 and \
+        not (previous_length == 5 and len(widget.get_text()) == 3):
         widget.stop_emission("insert_text")
         widget.insert_text("-", -1)
         GObject.idle_add(widget.set_position, -1)
     elif (previous_length == 5 and len(widget.get_text()) == 4) \
         or (previous_length == 8 and len(widget.get_text()) == 7):
-        print(widget.get_text()[:-2])
+        test = widget.get_text()
         widget.stop_emission("insert_text")
-        widget.set_text(widget.get_text()[:-2])
+        widget.stop_emission("changed")
+        widget.set_text(test[:-1])
         GObject.idle_add(widget.set_position, -1)
     global previous_length
     previous_length = len(widget.get_text())
