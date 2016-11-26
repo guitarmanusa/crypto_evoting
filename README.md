@@ -35,26 +35,26 @@ BUILD:
 Windows:
 --------
 1. Install [Python 3.4](https://www.python.org/ftp/python/3.4.4/python-3.4.4.msi)
-   1.1. NOTE: will not compile with Python 3.5
-   2.2. Add python install directory to PATH
-        2.2.1. C:> PATH=$PATH;<Python 3.4 install dir>
+   1. NOTE: will not compile with Python 3.5
+   2. Add python install directory to PATH
+      1. C:> PATH=$PATH;<Python 3.4 install dir>
 2. Install [PyGI AIO 3.18](https://sourceforge.net/projects/pygobjectwin32/files/latest/download)
-   2.1. Select GTK, Pango, and Glade as install options.
-        2.1.1 For a dev environment, selecting "DevHelp" is recommended
+   1. Select GTK, Pango, and Glade as install options.
+      1. For a dev environment, selecting "DevHelp" is recommended
 3. Install cx_Freeze, phe from python pip
-   3.1. python -m pip install cx_Freeze
-   3.2. python -m pop install phe
-        3.2.1. Read about phe and it's pallier implementation [https://python-paillier.readthedocs.io/en/stable/](https://python-paillier.readthedocs.io/en/stable/)
+   1. python -m pip install cx_Freeze
+   2. python -m pop install phe
+      1. Read about phe and it's pallier implementation [https://python-paillier.readthedocs.io/en/stable/](https://python-paillier.readthedocs.io/en/stable/)
 4. Install MySQL python connector
-   4.1 [Windows (x86, 32bit), MSI Installer, Python 3.4](https://dev.mysql.com/downloads/connector/python/2.1.html)
+   1. [Windows (x86, 32bit), MSI Installer, Python 3.4](https://dev.mysql.com/downloads/connector/python/2.1.html)
 5. To run from python source ("dev environment")
-   5.1. python main.py
+   1. python main.py
 6. To build
-   6.1. python setup.py build
-   6.2. exe will be in build/ folder
+   1. python setup.py build
+   2. exe will be in build/ folder
 7. To build installer (msi)
-   7.1. python setup.py bdist_msi
-        Note: .msi will be in bdist*/
+   1. python setup.py bdist_msi
+      Note: .msi will be in bdist*/
 
 Linux:
 1. Install dependencies
