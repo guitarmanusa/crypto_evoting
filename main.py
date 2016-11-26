@@ -275,10 +275,9 @@ def check_delete_id(widget):
     new_text = sanitize_id(widget)
     if len(new_text) == 10:
         builder.get_object("button_delete_voter").set_sensitive(True)
+        builder.get_object("button_delete_voter").grab_focus()
     elif len(new_text) < 10:
         builder.get_object("button_delete_voter").set_sensitive(False)
-    if builder.get_object("button_delete_voter").get_sensitive():
-        delete_voter(widget)
 
 def check_edit_id(widget):
     new_text = sanitize_id(widget)
@@ -332,6 +331,34 @@ def save_edit_voter(widget):
 
 def delete_voter(widget):
     print("Deleting voter number " + builder.get_object("entry_delete_voter_id").get_text())
+    # check to see if the voter_id is NOT in the database (== False)
+    if check_voter_id(builder.get_object("entry_delete_voter_id").get_text()) == False:
+        try:
+            query = ("DELETE FROM registered_voters WHERE voter_id = " + \
+                builder.get_object("entry_delete_voter_id").get_text())
+            cursor = cnx.cursor()
+            cursor.execute(query)
+            cnx.commit()
+            dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Voter removed.")
+            dialog.format_secondary_text("Voter ID: "+str(builder.get_object("entry_delete_voter_id").get_text()))
+            dialog.run()
+            dialog.destroy()
+            cursor.close()
+            builder.get_object("entry_delete_voter_id").grab_focus()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+    else:
+        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, "ERROR: Voter not removed.")
+        dialog.format_secondary_text("Voter ID: "+str(builder.get_object("entry_delete_voter_id").get_text()) + \
+            " does not exist in database.")
+        dialog.run()
+        dialog.destroy()
+        builder.get_object("entry_delete_voter_id").grab_focus()
 
 def apply_button_clicked(assistant):
     print("The 'Apply' button has been clicked")
