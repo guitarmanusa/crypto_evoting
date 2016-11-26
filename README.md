@@ -73,17 +73,21 @@ Mac:
 setup.sql
 
 CREATE DATABASE evoting;
+
 USE evoting;
+
 CREATE TABLE registered_voters (voter_id BIGINT, first_name CHAR(60) NOT NULL, middle_name CHAR(60) NOT NULL, last_name CHAR(60) NOT NULL, suffix CHAR(4), address VARCHAR(80) NOT NULL, birth DATE NOT NULL, ssn VARCHAR(11), has_voted BOOL, PRIMARY KEY (voter_id));
+
 CREATE TABLE candidates (pres_name VARCHAR(100) NOT NULL, vp_name VARCHAR(100) NOT NULL, party VARCHAR(60) NOT NULL, c_id TINYINT AUTO-INCREMENT NOT NULL, PRIMARY KEY (c_id));
+
 CREATE TABLE votes (unique_id SMALLINT, vote TYPE?? );  //will depend on candidates list
 
-CREATE USER evoting_admin;
-GRANT INSERT, DELETE, SELECT, UPDATE on evoting.candidates TO evoting_admin;
-GRANT INSERT, DELETE, SELECT, UPDATE on evoting.registered_votersTO evoting_admin;
+CREATE USER evoting_admin;  
+GRANT INSERT, DELETE, SELECT, UPDATE on evoting.candidates TO evoting_admin;  
+GRANT INSERT, DELETE, SELECT, UPDATE on evoting.registered_votersTO evoting_admin;  
 GRANT SELECT ON evoting.votes TO evoting_admin;
 
-CREATE USER read_candidates;
-GRANT SELECT ON evoting.candidates TO ‘read_candidates’;
-GRANT INSERT ON evoting.votes TO ‘read_candidates’;
+CREATE USER read_candidates;  
+GRANT SELECT ON evoting.candidates TO ‘read_candidates’;  
+GRANT INSERT ON evoting.votes TO ‘read_candidates’;  
 GRANT SELECT (voter_id, first_name, middle_name, last_name, suffix, has_voted) ON evoting.registered_voters TO ‘read_candidates’;
