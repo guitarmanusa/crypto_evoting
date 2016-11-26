@@ -106,6 +106,7 @@ def show_add_voter(widget):
     #TODO reset calendar
     builder.get_object("entry_address").set_text("")
     builder.get_object("entry_ssn").set_text("")
+    builder.get_object("entry_ssn").connect("changed", format_ssn)
 
 def add_voter(widget):
     #TODO implement
@@ -123,6 +124,7 @@ def show_find_voter(widget):
     #TODO reset calendar
     builder.get_object("entry_find_address").set_text("")
     builder.get_object("entry_find_ssn").set_text("")
+    builder.get_object("entry_ssn").connect("changed", format_ssn)
 
 def show_delete_voter(widget):
     delete_admin_main_window()
@@ -153,6 +155,15 @@ def show_edit_voter(widget):
     builder.get_object("box1").pack_start(
         builder.get_object("edit_voter_grid"), True, True, 0
     )
+    #TODO query details and fill into widgets
+    builder.get_object("entry_edit_first_name").set_text("")
+    builder.get_object("entry_edit_middle_name").set_text("")
+    builder.get_object("entry_edit_last_name").set_text("")
+    builder.get_object("combobox_edit_suffix").set_active(0)
+    #TODO reset edit calendar
+    builder.get_object("entry_edit_address").set_text("")
+    builder.get_object("entry_edit_ssn").set_text("")
+    builder.get_object("entry_edit_ssn").connect("changed", format_ssn)
     builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
     builder.get_object("button_edit_voter").connect("clicked", edit_voter)
 
@@ -162,6 +173,26 @@ def edit_voter(widget):
         builder.get_object("edit_voter_details_grid"), False, False, 0
     )
     builder.get_object("button_save_edit_voter").connect("clicked", save_edit_voter)
+
+previous_length = 0
+
+def format_ssn(widget):
+    print(previous_length)
+    if (len(widget.get_text()) == 3 or len(widget.get_text()) == 6) \
+        and widget.get_text()[-1] != "-" \
+        and previous_length != 4 and previous_length != 7:
+        print(widget.get_text()[-1])
+        widget.stop_emission("insert_text")
+        widget.insert_text("-", -1)
+        GObject.idle_add(widget.set_position, -1)
+    elif (previous_length == 5 and len(widget.get_text()) == 4) \
+        or (previous_length == 8 and len(widget.get_text()) == 7):
+        print(widget.get_text()[:-2])
+        widget.stop_emission("insert_text")
+        widget.set_text(widget.get_text()[:-2])
+        GObject.idle_add(widget.set_position, -1)
+    global previous_length
+    previous_length = len(widget.get_text())
 
 def save_edit_voter(widget):
     print("Saving updated voter information...TODO.")

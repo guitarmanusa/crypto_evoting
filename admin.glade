@@ -584,8 +584,8 @@
         <property name="can_focus">True</property>
         <property name="margin_right">15</property>
         <property name="margin_top">5</property>
-        <property name="max_length">12</property>
-        <property name="width_chars">12</property>
+        <property name="max_length">11</property>
+        <property name="width_chars">11</property>
       </object>
       <packing>
         <property name="left_attach">1</property>
@@ -931,8 +931,8 @@
         <property name="can_focus">True</property>
         <property name="margin_right">15</property>
         <property name="margin_top">5</property>
-        <property name="max_length">12</property>
-        <property name="width_chars">12</property>
+        <property name="max_length">11</property>
+        <property name="width_chars">11</property>
       </object>
       <packing>
         <property name="left_attach">1</property>
@@ -1176,8 +1176,8 @@
         <property name="can_focus">True</property>
         <property name="margin_right">15</property>
         <property name="margin_top">5</property>
-        <property name="max_length">12</property>
-        <property name="width_chars">12</property>
+        <property name="max_length">11</property>
+        <property name="width_chars">11</property>
       </object>
       <packing>
         <property name="left_attach">1</property>
