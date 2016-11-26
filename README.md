@@ -1,52 +1,64 @@
 README
+======
 
 Overview:
+---------
 
-Features:
-Admin mode:
+###Features:
+####Admin mode:
 
-Polling Station mode:
+####Polling Station mode:
 
 
 INSTALLATION:
+=============
 
 Windows:
+--------
 1. Double click EVoting-CSCI6320-FDE.msi
 2. Will install to C:\Program Files(x86)\EVoting-CSCI6320-FDE
 3. To use in admin mode right click “main.exe” and choose “Run as Administrator”
 4. To use as a polling station, run “main.exe” in user mode.
 
 Linux:
+------
 1. ?
 
 Mac:
+----
 1. ?
 
 
 BUILD:
+======
 
 Windows:
-1. Install Python 3.4
-   1. NOTE: will not compile with Python 3.5
-   2. Add python install directory to PATH
-1. Install PyGI AIO 3.18
-   1. Select GTK, Pango, and Glade as install options.
-1. Install cx_Freeze, phe from python pip
-   1. python -m pip install cx_Freeze
-   2. python -m pop install phe
-1. Install MySQL python connector
-   1. 1. To run from python source
-   1. python main.py
-1. To build
-   1. python setup.py build
-   2. exe will be in build/ folder
-1. To build installer (msi)
-   1. python setup.py bdist_msi
-   2. msi will be in bdist*/
+--------
+1. Install [Python 3.4](https://www.python.org/ftp/python/3.4.4/python-3.4.4.msi)
+   1.1. NOTE: will not compile with Python 3.5
+   2.2. Add python install directory to PATH
+        2.2.1. C:> PATH=$PATH;<Python 3.4 install dir>
+2. Install [PyGI AIO 3.18](https://sourceforge.net/projects/pygobjectwin32/files/latest/download)
+   2.1. Select GTK, Pango, and Glade as install options.
+        2.1.1 For a dev environment, selecting "DevHelp" is recommended
+3. Install cx_Freeze, phe from python pip
+   3.1. python -m pip install cx_Freeze
+   3.2. python -m pop install phe
+        3.2.1. Read about phe and it's pallier implementation [https://python-paillier.readthedocs.io/en/stable/](https://python-paillier.readthedocs.io/en/stable/)
+4. Install MySQL python connector
+   4.1 [Windows (x86, 32bit), MSI Installer, Python 3.4](https://dev.mysql.com/downloads/connector/python/2.1.html)
+5. To run from python source ("dev environment")
+   5.1. python main.py
+6. To build
+   6.1. python setup.py build
+   6.2. exe will be in build/ folder
+7. To build installer (msi)
+   7.1. python setup.py bdist_msi
+        Note: .msi will be in bdist*/
 
 Linux:
 1. Install dependencies
-   1. apt-get install python3 python3-gi python3-pip libmpc-dev libmpfr-dev libgtk-3-dev
+   1. # apt-get install python3 python3-gi python3-pip libmpc-dev libmpfr-dev libgtk-3-dev
 1. Install MySQL connector
 2. Install phe, cx_Freeze
 3. To run from source
