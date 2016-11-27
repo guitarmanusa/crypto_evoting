@@ -9,6 +9,8 @@ Overview:
 
 ####Polling Station mode:
 
+####Known bugs:
+In the windows version there is a known bug where the results from a search for a voter will not show (for the first query after running the program) until the window is minimized and then shown again.  This may be a glitch with the PyGIO implementation.
 
 INSTALLATION:
 =============
