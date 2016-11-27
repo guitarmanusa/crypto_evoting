@@ -260,6 +260,79 @@ def show_find_voter(widget):
     builder.get_object("entry_find_address").set_text("")
     builder.get_object("entry_find_ssn").set_text("")
     builder.get_object("entry_find_ssn").connect("changed", format_ssn)
+    builder.get_object("button_find_voter").connect("clicked", find_voter)
+
+def find_voter(widget):
+    print("Looking for voter...")
+    find_options = []
+    if builder.get_object("entry_find_first_name").get_text() != "":
+        find_options.append("first_name LIKE \"" + builder.get_object("entry_find_first_name").get_text() + "\"")
+    if builder.get_object("entry_find_middle_name").get_text() != "":
+        find_options.append("middle_name LIKE \"" + builder.get_object("entry_find_middle_name").get_text() + "\"")
+    if builder.get_object("entry_find_last_name").get_text() != "":
+        find_options.append("last_name LIKE \"" + builder.get_object("entry_find_last_name").get_text() + "\"")
+    if builder.get_object("combobox_find_suffix").get_active_text() != " ":
+        find_options.append("suffix = \"" + builder.get_object("combobox_find_suffix").get_active_text() + "\"")
+    dob = builder.get_object("calendar_find").get_date()
+    dob_str = str(dob[0]) + "-" + str(dob[1]+1) + "-" + str(dob[2])
+    today_str = str(date.today().year) + "-" + str(date.today().month) + "-" + str(date.today().day)
+    print(dob, dob_str, date.today(), dob_str == today_str)
+    if dob_str != today_str:
+        find_options.append("birth LIKE \"" + dob_str + "\"")
+    if builder.get_object("entry_find_address").get_text() != "":
+        find_options.append("address LIKE \"" + builder.get_object("entry_find_address").get_text() + "\"")
+    if builder.get_object("entry_find_ssn").get_text() != "":
+        find_options.append("ssn LIKE \"" + builder.get_object("entry_find_ssn").get_text() + "\"")
+
+    if len(find_options) > 0:
+        query_options = ""
+        if len(find_options) > 1:
+            for option in find_options[:-1]:
+                query_options = query_options + option + " AND "
+        query_options = query_options + find_options[-1]
+        print(query_options)
+        global cnx
+        try:
+            query = ("SELECT * FROM registered_voters WHERE " + query_options)
+            cursor = cnx.cursor()
+            cursor.execute(query)
+            results = list(cursor)
+            print(type(results))
+            if len(results) > 0:
+                delete_admin_main_window()
+                builder.get_object("box1").pack_start(
+                    builder.get_object("find_results_grid"), True, True, 0
+                )
+                builder.get_object("find_results_grid").grab_focus()
+                #builder.get_object("box1").show_all()
+                result_store = builder.get_object("liststore_find_voter")
+                #clear previous entries
+                result_store.clear()
+                for (voter_id, first_name, middle_name, last_name, suffix, address, dob, ssn, has_voted) in results:
+                    #TODO load new window, put results into liststore
+                    dob_str = str(dob.month) + "/" + str(dob.day) + "/" + str(dob.year)
+                    result_store.append([int(voter_id), first_name, middle_name, last_name, suffix, address, dob_str, ssn])
+                for result in result_store:
+                    print(result)
+            else:
+                print("No results found...")
+                dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "No results found.")
+                dialog.format_secondary_text("No results found with the given parameters: " + query_options)
+                dialog.run()
+                dialog.destroy()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+    else:
+        print("No search parameters entered...")
+        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.WARNING, Gtk.ButtonsType.OK, "WARNING: No search conducted.")
+        dialog.format_secondary_text("No search parameters were given by user.")
+        dialog.run()
+        dialog.destroy()
 
 def show_delete_voter(widget):
     delete_admin_main_window()
