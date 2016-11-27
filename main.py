@@ -576,7 +576,7 @@ def validate_voter_id(voter_id):
             print(err)
     return "invalid"
 
-def load_candidates():
+def load_candidates(widget, spinner):
     global candidate_list
     if (candidate_list == None):
         try:
@@ -595,24 +595,26 @@ def load_candidates():
     global candidates_populated
     if len(candidate_list) >= 1 and candidates_populated == False:
         #delete spinner
-        page5.remove(page5.get_children()[-1])
+        widget.remove(spinner)
         candidate_buttons = []
         candidate_buttons.append(Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)"))
         candidate_buttons[-1].connect("toggled", on_button_toggled, candidate_list[0][3])
-        page5.pack_start(candidate_buttons[-1], False, False, 0)
+        widget.pack_start(candidate_buttons[-1], False, False, 0)
         for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
             # add radio buttons to the page
             candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + ")"))
             candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
-            page5.pack_start(candidate_buttons[-1], False, False, 0)
+            widget.pack_start(candidate_buttons[-1], False, False, 0)
         candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
         candidate_buttons[-1].connect("toggled", on_button_toggled, None)
         candidate_buttons[-1].set_active(True)
-        page5.pack_start(candidate_buttons[-1], False, False, 0)
-        page5.show_all()
+        widget.pack_start(candidate_buttons[-1], False, False, 0)
+        widget.show_all()
         candidate_list.append(("None of the above", "None", "None", None))
         candidates_populated = True
-    assistant.set_page_complete(page5, True)
+    print(type(widget))
+    if type(widget) == gi.repository.Gtk.Box:
+        assistant.set_page_complete(page5, True)
 
 def prepare_handler(widget, data):
     if page5 == data:
@@ -621,7 +623,7 @@ def prepare_handler(widget, data):
         if valid_id_response == "valid_non_voted":
             builder.get_object("spinner1").start()
             print("Spinner started...")
-            thread = threading.Thread(target=load_candidates)
+            thread = threading.Thread(target=load_candidates, args=(page5, page5.get_children()[-1]))
             thread.daemon = True
             thread.start()
         elif valid_id_response == "valid_voted":
@@ -711,6 +713,25 @@ def logout(self):
     show_login_window()
     builder.get_object("login_entry_username").grab_focus()
 
+def show_candidate_list(widget):
+    delete_admin_main_window()
+    builder.get_object("box1").pack_start(
+        builder.get_object("grid_candidates_list"), True, True, 0
+    )
+    for child in builder.get_object("box_candidates").get_children():
+        builder.get_object("box_candidates").remove(child)
+    thread = threading.Thread(target=load_candidates, args=(
+        builder.get_object("box_candidates"), builder.get_object("spinner_candidates"))
+    )
+    thread.daemon = True
+    thread.start()
+
+def add_candidate(widget):
+    print("TODO...adding candidate")
+
+def delete_candidate(widget):
+    print("TODO...delete candidate")
+
 def show_about(widget):
     aboutdialog = Gtk.AboutDialog()
     authors = ["Kyle Francis", "Damon Gass", "Ben Epsey"]
@@ -755,9 +776,12 @@ if is_admin():
     builder.get_object("button_login").connect("clicked", login_clicked)
     builder.get_object("login_entry_username").connect("activate", login_clicked)
     builder.get_object("login_entry_password").connect("activate", login_clicked)
-    #add voter connections
+    #candidates buttons
     builder.get_object("button_add_voter").connect("clicked", req_add_voter)
     builder.get_object("entry_ssn").connect("changed", format_ssn)
+    #add voter connections
+    builder.get_object("button_add_candidate").connect("clicked", add_candidate)
+    builder.get_object("button_delete_candidate").connect("clicked", delete_candidate)
     #delete voter connections
     builder.get_object("entry_delete_voter_id").connect("changed", check_delete_id)
     builder.get_object("entry_delete_voter_id").connect("activate", check_delete_id)
