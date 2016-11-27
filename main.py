@@ -465,7 +465,7 @@ def save_edit_voter(widget):
             query = ("UPDATE registered_voters SET first_name = \"" + fname + "\", \
                 middle_name = \"" + mname + "\", last_name = \"" + lname + "\", \
                 suffix = \"" + suffix + "\", address = \"" + address + "\", birth = \"" + dob_str +\
-                "\", ssn = \"" + ssn + "\"")
+                "\", ssn = \"" + ssn + "\" WHERE voter_id = " + voter_id)
             print(query)
             cursor = cnx.cursor()
             cursor.execute(query)
