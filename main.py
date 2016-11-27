@@ -283,6 +283,7 @@ def check_edit_id(widget):
     new_text = sanitize_id(widget)
     if len(new_text) == 10:
         builder.get_object("button_edit_voter").set_sensitive(True)
+        builder.get_object("button_edit_voter").grab_focus()
 
 def show_edit_voter(widget):
     delete_admin_main_window()
@@ -303,15 +304,12 @@ def edit_voter(widget):
         cursor = cnx.cursor()
         cursor.execute(query)
         list_cursor = list(cursor)
-        print(list_cursor)
         if len(list_cursor) == 1:
             delete_admin_main_window()
             builder.get_object("box1").pack_start(
                 builder.get_object("edit_voter_details_grid"), False, False, 0
             )
-            print(list_cursor)
             for (first_name, middle_name, last_name, suffix, birth, address, ssn) in list_cursor:
-                print("Here!!")
                 builder.get_object("entry_edit_first_name").set_text(first_name)
                 if middle_name == "NMN":
                     builder.get_object("entry_edit_middle_name").set_text("")
@@ -320,7 +318,6 @@ def edit_voter(widget):
                 builder.get_object("entry_edit_last_name").set_text(last_name)
                 builder.get_object("combobox_edit_suffix").set_active(get_suffix_index(suffix))
                 #reset edit calendar
-                print(birth)
                 builder.get_object("calendar_edit").select_day(birth.day)
                 builder.get_object("calendar_edit").select_month(birth.month-1, birth.year)
                 builder.get_object("entry_edit_address").set_text(address)
@@ -378,6 +375,42 @@ def format_ssn(widget):
 
 def save_edit_voter(widget):
     print("Saving updated voter information...TODO.")
+    global cnx
+    voter_id = builder.get_object("entry_edit_voter_id").get_text()
+    fname = builder.get_object("entry_edit_first_name").get_text()
+    mname = builder.get_object("entry_edit_middle_name").get_text()
+    lname = builder.get_object("entry_edit_last_name").get_text()
+    suffix = builder.get_object("combobox_edit_suffix").get_active_text()
+    dob = builder.get_object("calendar_edit").get_date()
+    dob_str = str(dob[0]) + "-" + str(dob[1]+1) + "-" + str(dob[2])
+    address = builder.get_object("entry_edit_address").get_text()
+    ssn = builder.get_object("entry_edit_ssn").get_text()
+
+    if check_voter_info(widget, fname, lname, address, ssn):
+        #send to MySQL database
+        try:
+            query = ("UPDATE registered_voters SET first_name = \"" + fname + "\", \
+                middle_name = \"" + mname + "\", last_name = \"" + lname + "\", \
+                suffix = \"" + suffix + "\", address = \"" + address + "\", birth = \"" + dob_str +\
+                "\", ssn = \"" + ssn + "\"")
+            print(query)
+            cursor = cnx.cursor()
+            cursor.execute(query)
+            cnx.commit()
+            cursor.close()
+            dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Updated Voter Information.")
+            dialog.format_secondary_text("Voter information summary:\n\nVoter ID: "+str(voter_id)+\
+                "\nFirst Name: "+fname+"\nMiddle Name: "+mname+"\nLast Name: "+lname+\
+                "\nSuffix :" + suffix +"\nAddress: "+address+"\nDOB: "+dob_str+"\nSSN: "+ssn)
+            dialog.run()
+            dialog.destroy()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
 
 def delete_voter(widget):
     print("Deleting voter number " + builder.get_object("entry_delete_voter_id").get_text())
