@@ -289,24 +289,74 @@ def show_edit_voter(widget):
     builder.get_object("box1").pack_start(
         builder.get_object("edit_voter_grid"), True, True, 0
     )
-    #TODO query details and fill into widgets
-    builder.get_object("entry_edit_first_name").set_text("")
-    builder.get_object("entry_edit_middle_name").set_text("")
-    builder.get_object("entry_edit_last_name").set_text("")
-    builder.get_object("combobox_edit_suffix").set_active(0)
-    #TODO reset edit calendar
-    builder.get_object("entry_edit_address").set_text("")
-    builder.get_object("entry_edit_ssn").set_text("")
-    builder.get_object("entry_edit_ssn").connect("changed", format_ssn)
+    builder.get_object("entry_edit_voter_id").grab_focus()
     builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
     builder.get_object("button_edit_voter").connect("clicked", edit_voter)
 
 def edit_voter(widget):
-    delete_admin_main_window()
-    builder.get_object("box1").pack_start(
-        builder.get_object("edit_voter_details_grid"), False, False, 0
-    )
-    builder.get_object("button_save_edit_voter").connect("clicked", save_edit_voter)
+    #query details and fill into widgets
+    try:
+        global cnx
+        query = ("SELECT first_name, middle_name, last_name, suffix, birth, address, ssn \
+            FROM registered_voters WHERE voter_id = " + \
+            builder.get_object("entry_edit_voter_id").get_text())
+        cursor = cnx.cursor()
+        cursor.execute(query)
+        list_cursor = list(cursor)
+        print(list_cursor)
+        if len(list_cursor) == 1:
+            delete_admin_main_window()
+            builder.get_object("box1").pack_start(
+                builder.get_object("edit_voter_details_grid"), False, False, 0
+            )
+            print(list_cursor)
+            for (first_name, middle_name, last_name, suffix, birth, address, ssn) in list_cursor:
+                print("Here!!")
+                builder.get_object("entry_edit_first_name").set_text(first_name)
+                if middle_name == "NMN":
+                    builder.get_object("entry_edit_middle_name").set_text("")
+                else:
+                    builder.get_object("entry_edit_middle_name").set_text(middle_name)
+                builder.get_object("entry_edit_last_name").set_text(last_name)
+                builder.get_object("combobox_edit_suffix").set_active(get_suffix_index(suffix))
+                #reset edit calendar
+                print(birth)
+                builder.get_object("calendar_edit").select_day(birth.day)
+                builder.get_object("calendar_edit").select_month(birth.month-1, birth.year)
+                builder.get_object("entry_edit_address").set_text(address)
+                builder.get_object("entry_edit_ssn").set_text(ssn)
+                builder.get_object("entry_edit_ssn").connect("changed", format_ssn)
+                builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
+                builder.get_object("button_save_edit_voter").connect("clicked", save_edit_voter)
+        else:
+            print("Voter ID not found...")
+            dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, "Sucess: Voter removed.")
+            dialog.format_secondary_text("Voter ID: " + builder.get_object("entry_edit_voter_id").get_text() + " not found!")
+            dialog.run()
+            dialog.destroy()
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+
+def get_suffix_index(suffix):
+    return {
+        "": 0,
+        "Jr.": 1,
+        "Sr.": 2,
+        "II": 3,
+        "III": 4,
+        "IV": 5,
+        "V": 6,
+        "VI": 7,
+        "VII": 8,
+        "VIII": 9,
+        "IX": 10,
+        "X": 11,
+    }[suffix]
 
 def format_ssn(widget):
     if ((len(widget.get_text()) == 3 and previous_length != 4) \
