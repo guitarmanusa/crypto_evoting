@@ -318,16 +318,9 @@ def find_voter(widget):
                     builder.get_object("find_results_grid"), True, True, 0
                 )
                 builder.get_object("find_results_grid").grab_focus()
-                #builder.get_object("box1").show_all()
-                result_store = builder.get_object("liststore_find_voter")
-                #clear previous entries
-                result_store.clear()
-                for (voter_id, first_name, middle_name, last_name, suffix, address, dob, ssn, has_voted) in results:
-                    #TODO load new window, put results into liststore
-                    dob_str = str(dob.month) + "/" + str(dob.day) + "/" + str(dob.year)
-                    result_store.append([int(voter_id), first_name, middle_name, last_name, suffix, address, dob_str, ssn])
-                for result in result_store:
-                    print(result)
+                thread = threading.Thread(target=add_results_to_treeview, args=[results])
+                thread.daemon = True
+                thread.start()
             else:
                 print("No results found...")
                 dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "No results found.")
@@ -347,6 +340,16 @@ def find_voter(widget):
         dialog.format_secondary_text("No search parameters were given by user.")
         dialog.run()
         dialog.destroy()
+
+def add_results_to_treeview(results):
+    #builder.get_object("box1").show_all()
+    result_store = builder.get_object("liststore_find_voter")
+    #clear previous entries
+    result_store.clear()
+    #put results into liststore
+    for (voter_id, first_name, middle_name, last_name, suffix, address, dob, ssn, has_voted) in results:
+        dob_str = str(dob.month) + "/" + str(dob.day) + "/" + str(dob.year)
+        result_store.append([int(voter_id), first_name, middle_name, last_name, suffix, address, dob_str, ssn])
 
 def show_delete_voter(widget):
     delete_admin_main_window()
