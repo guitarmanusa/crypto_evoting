@@ -940,6 +940,7 @@
             <child>
               <object class="GtkMenuItem" id="candidates_menuitem">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">_Candidates</property>
                 <property name="use_underline">True</property>
@@ -1013,6 +1014,7 @@
             <child>
               <object class="GtkMenuItem" id="finalize_menuitem">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">F_inalize</property>
                 <property name="use_underline">True</property>

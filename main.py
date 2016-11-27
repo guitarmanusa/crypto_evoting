@@ -64,6 +64,8 @@ def login_thread():
             )
             builder.get_object("voters_menuitem").set_sensitive(True)
             builder.get_object("results_menuitem").set_sensitive(True)
+            builder.get_object("candidates_menuitem").set_sensitive(True)
+            builder.get_object("finalize_menuitem").set_sensitive(True)
             delete_admin_main_window()
             builder.get_object("logged_in_as_label").set_text(
                 "Logged in as: " + builder.get_object("login_entry_username").get_text()
@@ -710,6 +712,8 @@ def logout(self):
         pass
     builder.get_object("voters_menuitem").set_sensitive(False)
     builder.get_object("results_menuitem").set_sensitive(False)
+    builder.get_object("candidates_menuitem").set_sensitive(False)
+    builder.get_object("finalize_menuitem").set_sensitive(False)
     #delete child
     delete_admin_main_window()
     builder.get_object("logged_in_as_label").set_text("")
