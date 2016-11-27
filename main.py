@@ -116,7 +116,6 @@ def show_add_voter(widget):
     builder.get_object("box1").pack_start(
         builder.get_object("add_voter_grid"), False, False, 0
     )
-    builder.get_object("button_add_voter").connect("clicked", req_add_voter)
     builder.get_object("entry_first_name").set_text("")
     builder.get_object("entry_middle_name").set_text("")
     builder.get_object("entry_last_name").set_text("")
@@ -128,7 +127,6 @@ def show_add_voter(widget):
     builder.get_object("calendar_add").clear_marks()
     builder.get_object("entry_address").set_text("")
     builder.get_object("entry_ssn").set_text("")
-    builder.get_object("entry_ssn").connect("changed", format_ssn)
 
 def req_add_voter(widget):
     print("Checking voter information...")
@@ -273,8 +271,6 @@ def show_find_voter(widget):
     builder.get_object("calendar_find").clear_marks()
     builder.get_object("entry_find_address").set_text("")
     builder.get_object("entry_find_ssn").set_text("")
-    builder.get_object("entry_find_ssn").connect("changed", format_ssn)
-    builder.get_object("button_find_voter").connect("clicked", find_voter)
 
 def find_voter(widget):
     print("Looking for voter...")
@@ -311,6 +307,7 @@ def find_voter(widget):
             cursor = cnx.cursor()
             cursor.execute(query)
             results = list(cursor)
+            cursor.close()
             print(type(results))
             if len(results) > 0:
                 delete_admin_main_window()
@@ -340,6 +337,7 @@ def find_voter(widget):
         dialog.format_secondary_text("No search parameters were given by user.")
         dialog.run()
         dialog.destroy()
+    return
 
 def add_results_to_treeview(results):
     #builder.get_object("box1").show_all()
@@ -347,18 +345,18 @@ def add_results_to_treeview(results):
     #clear previous entries
     result_store.clear()
     #put results into liststore
+    for result in results:
+        print(result)
     for (voter_id, first_name, middle_name, last_name, suffix, address, dob, ssn, has_voted) in results:
         dob_str = str(dob.month) + "/" + str(dob.day) + "/" + str(dob.year)
         result_store.append([int(voter_id), first_name, middle_name, last_name, suffix, address, dob_str, ssn])
+    return
 
 def show_delete_voter(widget):
     delete_admin_main_window()
     builder.get_object("box1").pack_start(
         builder.get_object("delete_voter_grid"), True, True, 0
     )
-    builder.get_object("entry_delete_voter_id").connect("changed", check_delete_id)
-    builder.get_object("entry_delete_voter_id").connect("activate", check_delete_id)
-    builder.get_object("button_delete_voter").connect("clicked", delete_voter)
     builder.get_object("entry_delete_voter_id").grab_focus()
 
 def check_delete_id(widget):
@@ -381,8 +379,6 @@ def show_edit_voter(widget):
         builder.get_object("edit_voter_grid"), True, True, 0
     )
     builder.get_object("entry_edit_voter_id").grab_focus()
-    builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
-    builder.get_object("button_edit_voter").connect("clicked", edit_voter)
 
 def edit_voter(widget):
     #query details and fill into widgets
@@ -412,9 +408,6 @@ def edit_voter(widget):
                 builder.get_object("calendar_edit").select_month(birth.month-1, birth.year)
                 builder.get_object("entry_edit_address").set_text(address)
                 builder.get_object("entry_edit_ssn").set_text(ssn)
-                builder.get_object("entry_edit_ssn").connect("changed", format_ssn)
-                builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
-                builder.get_object("button_save_edit_voter").connect("clicked", save_edit_voter)
         else:
             print("Voter ID not found...")
             dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, "Sucess: Voter removed.")
@@ -622,8 +615,6 @@ def load_candidates():
     assistant.set_page_complete(page5, True)
 
 def prepare_handler(widget, data):
-    if page4 == data:
-        builder.get_object("entry_voter_id").connect("activate", lambda x: builder.get_object("assistant-action_area1").grab_focus())
     if page5 == data:
         print("Validate Unique User ID...")
         valid_id_response = validate_voter_id(builder.get_object("entry_voter_id").get_text())
@@ -696,9 +687,6 @@ def check_id_input(widget):
         assistant.set_page_complete(page4, False)
 
 def show_login_window():
-    builder.get_object("button_login").connect("clicked", login_clicked)
-    builder.get_object("login_entry_username").connect("activate", login_clicked)
-    builder.get_object("login_entry_password").connect("activate", login_clicked)
     builder.get_object("login_entry_username").set_text("")
     builder.get_object("login_entry_password").set_text("")
     builder.get_object("box1").pack_end(
@@ -752,6 +740,7 @@ builder = Gtk.Builder()
 if is_admin():
     builder.add_from_file("admin.glade")
     quit_menu_option = builder.get_object("quit_menu")
+    #main menubar connections
     quit_menu_option.connect("activate", program_quit)
     builder.get_object("logout_menu").connect("activate", logout)
     builder.get_object("candidate_list_menu").connect("activate", show_candidate_list)
@@ -762,6 +751,27 @@ if is_admin():
     builder.get_object("finalize_election_menu").connect("activate", finalize_election)
     builder.get_object("execute_results_menu").connect("activate", calc_election_results)
     builder.get_object("about_menuitem").connect("activate", show_about)
+    #login window connections
+    builder.get_object("button_login").connect("clicked", login_clicked)
+    builder.get_object("login_entry_username").connect("activate", login_clicked)
+    builder.get_object("login_entry_password").connect("activate", login_clicked)
+    #add voter connections
+    builder.get_object("button_add_voter").connect("clicked", req_add_voter)
+    builder.get_object("entry_ssn").connect("changed", format_ssn)
+    #delete voter connections
+    builder.get_object("entry_delete_voter_id").connect("changed", check_delete_id)
+    builder.get_object("entry_delete_voter_id").connect("activate", check_delete_id)
+    builder.get_object("button_delete_voter").connect("clicked", delete_voter)
+    #edit voter connections
+    builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
+    builder.get_object("button_edit_voter").connect("clicked", edit_voter)
+    builder.get_object("entry_edit_ssn").connect("changed", format_ssn)
+    builder.get_object("entry_edit_voter_id").connect("changed", check_edit_id)
+    builder.get_object("button_save_edit_voter").connect("clicked", save_edit_voter)
+    #find voter connections
+    builder.get_object("entry_find_ssn").connect("changed", format_ssn)
+    builder.get_object("button_find_voter").connect("clicked", find_voter)
+
     show_login_window()
 
 else:
@@ -784,6 +794,7 @@ else:
 
     page4 = builder.get_object("grid1")
     builder.get_object("entry_voter_id").connect("changed", check_id_input)
+    builder.get_object("entry_voter_id").connect("activate", lambda x: builder.get_object("assistant-action_area1").grab_focus())
     assistant.set_page_complete(page4, False)
 
     page5 = builder.get_object("box5")
