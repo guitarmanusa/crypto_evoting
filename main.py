@@ -724,14 +724,85 @@ def show_candidate_list(widget):
     )
     for child in builder.get_object("box_candidates").get_children():
         builder.get_object("box_candidates").remove(child)
+    global candidate_list
+    candidate_list = None
     thread = threading.Thread(target=load_candidates, args=(
-        builder.get_object("box_candidates"), builder.get_object("spinner_candidates"))
+            builder.get_object("box_candidates"),
+            builder.get_object("spinner_candidates"),
+            False
+        )
     )
     thread.daemon = True
     thread.start()
 
 def add_candidate(widget):
     print("TODO...adding candidate")
+    delete_admin_main_window()
+    builder.get_object("box1").pack_start(
+        builder.get_object("grid_add_candidate"), True, True, 0
+    )
+
+def submit_candidate(widget):
+    print("Checking that candidate is not already in DB.")
+    global candidate_list
+    global cnx
+    if (candidate_list == None):
+        try:
+            cursor = cnx.cursor()
+            query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
+            cursor.execute(query)
+            candidate_list = list(cursor)
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+    proceed = ""
+    for (pres_nom, vp_nom, party, c_id) in candidate_list:
+        if pres_nom == builder.get_object("entry_pres_nom").get_text():
+            proceed = "Presidential"
+        if vp_nom == builder.get_object("entry_vpres_nom").get_text():
+            proceed = "Vice Presidential"
+    if proceed == "":
+        try:
+            query = ("INSERT INTO candidates (pres_nom, vp_nom, party)\
+                VALUES (\"" + builder.get_object("entry_pres_nom").get_text() + "\", \
+                \"" + builder.get_object("entry_vpres_nom").get_text() + "\", \
+                \"" + builder.get_object("entry_party").get_text() + "\")"
+            )
+            cursor = cnx.cursor()
+            cursor.execute(query)
+            cnx.commit()
+            cursor.close()
+            dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Added candidates to ballot.")
+            dialog.format_secondary_text("Candidate information summary:\n\n\
+                Presidential Nominee: "+builder.get_object("entry_pres_nom").get_text()+ "\n\
+                Vice President Nominee: "+builder.get_object("entry_vpres_nom").get_text()+"\n\
+                Party: " + builder.get_object("entry_party").get_text()
+            )
+            dialog.run()
+            dialog.destroy()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+    elif proceed == "Presidential" or proceed == "Vice Presidential":
+        if proceed == "Presidential":
+            entry = "entry_pres_nom"
+        else:
+            entry = "entry_vpres_nom"
+        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, "Failed: Unable to add to ballot.")
+        dialog.format_secondary_text(
+            proceed + " Nominee: "+builder.get_object(entry).get_text()+ \
+            " already appears on the ballot."
+        )
+        dialog.run()
+        dialog.destroy()
 
 def delete_candidate(widget):
     print("TODO...delete candidate")
