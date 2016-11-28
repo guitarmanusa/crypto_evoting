@@ -94,9 +94,6 @@ def login_clicked(button):
     thread.daemon = True
     thread.start()
 
-def show_candidate_list(widget):
-    print("TODO, show candidate list")
-
 def finalize_election(widget):
     print("TODO, don't allow further changes to voters or candidates tables.")
 
@@ -726,6 +723,8 @@ def show_candidate_list(widget):
         builder.get_object("box_candidates").remove(child)
     global candidate_list
     candidate_list = None
+    global candidates_populated
+    candidates_populated = False
     thread = threading.Thread(target=load_candidates, args=(
             builder.get_object("box_candidates"),
             builder.get_object("spinner_candidates"),
@@ -806,6 +805,31 @@ def submit_candidate(widget):
 
 def delete_candidate(widget):
     print("TODO...delete candidate")
+    global vote
+    global cnx
+    try:
+        query = ("DELETE FROM candidates WHERE c_id = " + str(vote))
+        cursor = cnx.cursor()
+        cursor.execute(query)
+        cnx.commit()
+        for candidate in candidate_list:
+            if candidate[3] == vote:
+                dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Candidate removed.")
+                dialog.format_secondary_text("Candidate ID: "+str(vote)+"\n\
+                    Presidential Nominee: "+candidate[0]+"\n\
+                    Vice Presidential Nominee: "+candidate[1]+"\n\
+                    Party: "+candidate[2])
+                dialog.run()
+                dialog.destroy()
+        cursor.close()
+        show_candidate_list(widget)
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
 
 def show_about(widget):
     aboutdialog = Gtk.AboutDialog()
