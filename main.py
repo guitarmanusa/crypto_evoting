@@ -576,7 +576,7 @@ def validate_voter_id(voter_id):
             print(err)
     return "invalid"
 
-def load_candidates(widget, spinner):
+def load_candidates(widget, spinner, is_voting):
     global candidate_list
     if (candidate_list == None):
         try:
@@ -602,19 +602,23 @@ def load_candidates(widget, spinner):
         widget.pack_start(candidate_buttons[-1], False, False, 0)
         for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
             # add radio buttons to the page
-            candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + ")"))
+            candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + " Party)"))
             candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
             widget.pack_start(candidate_buttons[-1], False, False, 0)
-        candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
-        candidate_buttons[-1].connect("toggled", on_button_toggled, None)
-        candidate_buttons[-1].set_active(True)
-        widget.pack_start(candidate_buttons[-1], False, False, 0)
+        if is_voting == True:
+            candidate_list.append(("None of the above", "None", "None", None))
+            candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
+            candidate_buttons[-1].connect("toggled", on_button_toggled, None)
+            candidate_buttons[-1].set_active(True)
+            widget.pack_start(candidate_buttons[-1], False, False, 0)
         widget.show_all()
-        candidate_list.append(("None of the above", "None", "None", None))
         candidates_populated = True
     print(type(widget))
     if type(widget) == gi.repository.Gtk.Box:
-        assistant.set_page_complete(page5, True)
+        try:
+            assistant.set_page_complete(page5, True)
+        except NameError:
+            print("You dun messed up A-A-RON!!")
 
 def prepare_handler(widget, data):
     if page5 == data:
@@ -623,7 +627,7 @@ def prepare_handler(widget, data):
         if valid_id_response == "valid_non_voted":
             builder.get_object("spinner1").start()
             print("Spinner started...")
-            thread = threading.Thread(target=load_candidates, args=(page5, page5.get_children()[-1]))
+            thread = threading.Thread(target=load_candidates, args=(page5, page5.get_children()[-1],True))
             thread.daemon = True
             thread.start()
         elif valid_id_response == "valid_voted":
@@ -776,12 +780,13 @@ if is_admin():
     builder.get_object("button_login").connect("clicked", login_clicked)
     builder.get_object("login_entry_username").connect("activate", login_clicked)
     builder.get_object("login_entry_password").connect("activate", login_clicked)
-    #candidates buttons
+    #add voter connections
     builder.get_object("button_add_voter").connect("clicked", req_add_voter)
     builder.get_object("entry_ssn").connect("changed", format_ssn)
-    #add voter connections
+    #candidates buttons
     builder.get_object("button_add_candidate").connect("clicked", add_candidate)
     builder.get_object("button_delete_candidate").connect("clicked", delete_candidate)
+    builder.get_object("button_submit_candidate").connect("clicked", submit_candidate)
     #delete voter connections
     builder.get_object("entry_delete_voter_id").connect("changed", check_delete_id)
     builder.get_object("entry_delete_voter_id").connect("activate", check_delete_id)
