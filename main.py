@@ -25,7 +25,7 @@ except (ImportError, RuntimeError):
 
 cnx = None
 candidate_list = None
-vote = None
+votes = []
 candidates_populated = False
 previous_length = 0
 suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
@@ -548,7 +548,7 @@ def validate_voter_id_thread(widget, voter_id):
         dialog.format_secondary_text("Voter ID " + builder.get_object("entry_voter_id").get_text() + " has already voted.")
         add_mainloop_task(show_dialog_in_thread, dialog)
         print("ERROR dialog closed")
-        assistant.previous_page()
+        add_mainloop_task(assistant.previous_page(), None)
     elif valid_id_response == "invalid":
         spinner = builder.get_object("spinner1")
         spinner.stop()
@@ -556,7 +556,7 @@ def validate_voter_id_thread(widget, voter_id):
         dialog.format_secondary_text("Unable to validate voter ID " + builder.get_object("entry_voter_id").get_text() + " with the information provided.  Please try again.")
         add_mainloop_task(show_dialog_in_thread, dialog)
         print("ERROR dialog closed")
-        assistant.previous_page()
+        add_mainloop_task(assistant.previous_page(), None)
 
 def add_mainloop_task(callback, *args):
     """http://stackoverflow.com/questions/26362447/dialog-in-thread-freeze-whole-app-despite-gdk-threads-enter-leave"""
@@ -661,12 +661,19 @@ def prepare_handler(widget, data):
         thread.daemon = True
         thread.start()
     if page6 == data:
-        global vote
+        global votes
         #show confirmation page with selected candidate information
+        for vote in votes:
+            print(vote)
+            if vote[1] == 1:
+                candidate_selected = vote[0]
         for candidate in candidate_list:
-            if candidate[3] == vote:
+            print(candidate)
+            if candidate[3] == candidate_selected:
                 builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
     if page7 == data:
+        global votes
+        print(votes)
         #submit vote
             #actual work done here
             #zero knowledge proof
@@ -684,10 +691,14 @@ def prepare_handler(widget, data):
 def submit():
     return True
 
-def on_button_toggled(button, c_id):
-    global vote
-    if button.get_active():
-        vote = c_id
+def on_button_toggled(changed_button, c_id):
+    global votes
+    votes = []
+    for button in changed_button.get_group():
+        if button.get_active():
+            votes.append([button.get_name(), 1])
+        else:
+            votes.append([button.get_name(), 0])
 
 def sanitize_id(widget):
     new_text = widget.get_text()
