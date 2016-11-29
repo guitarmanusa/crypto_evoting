@@ -13,7 +13,7 @@ except AttributeError:
     print (False, "pygobject version too old.")
 
 try:
-    from gi.repository import Gtk, Gdk, GObject
+    from gi.repository import Gtk, Gdk, GObject, GLib
 except (ImportError, RuntimeError):
     print (False, "Requires pygobject to be installed.")
 
@@ -305,7 +305,6 @@ def find_voter(widget):
             cursor.execute(query)
             results = list(cursor)
             cursor.close()
-            print(type(results))
             if len(results) > 0:
                 delete_admin_main_window()
                 builder.get_object("box1").pack_start(
@@ -534,6 +533,43 @@ def cancel_button_clicked(assistant):
     print("The 'Cancel' button has been clicked")
     program_quit()
 
+def validate_voter_id_thread(widget, voter_id):
+    print("Voter ID: ", voter_id)
+    valid_id_response = validate_voter_id(voter_id)
+    print(valid_id_response)
+    if valid_id_response == "valid_non_voted":
+        thread = threading.Thread(target=load_candidates, args=(page5, builder.get_object("spinner1"),True))
+        thread.daemon = True
+        thread.start()
+    elif valid_id_response == "valid_voted":
+        spinner = builder.get_object("spinner1")
+        spinner.stop()
+        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Possible Voter Fraud")
+        dialog.format_secondary_text("Voter ID " + builder.get_object("entry_voter_id").get_text() + " has already voted.")
+        add_mainloop_task(show_dialog_in_thread, dialog)
+        print("ERROR dialog closed")
+        assistant.previous_page()
+    elif valid_id_response == "invalid":
+        spinner = builder.get_object("spinner1")
+        spinner.stop()
+        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Unable to validate")
+        dialog.format_secondary_text("Unable to validate voter ID " + builder.get_object("entry_voter_id").get_text() + " with the information provided.  Please try again.")
+        add_mainloop_task(show_dialog_in_thread, dialog)
+        print("ERROR dialog closed")
+        assistant.previous_page()
+
+def add_mainloop_task(callback, *args):
+    """http://stackoverflow.com/questions/26362447/dialog-in-thread-freeze-whole-app-despite-gdk-threads-enter-leave"""
+    def cb(args):
+        args[0](*args[1:])
+        return False
+    args= [callback]+list(args)
+    Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT, cb, args)
+
+def show_dialog_in_thread(dialog):
+    dialog.run()
+    dialog.destroy()
+
 def validate_voter_id(voter_id):
     int_id = int(voter_id)
     #query voter table and check if voter already voted
@@ -591,26 +627,24 @@ def load_candidates(widget, spinner, is_voting):
                 print(err)
     global candidates_populated
     if len(candidate_list) >= 1 and candidates_populated == False:
-        #delete spinner
-        widget.remove(spinner)
         candidate_buttons = []
         candidate_buttons.append(Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)"))
         candidate_buttons[-1].connect("toggled", on_button_toggled, candidate_list[0][3])
-        widget.pack_start(candidate_buttons[-1], False, False, 0)
         for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
             # add radio buttons to the page
             candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + " Party)"))
             candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
-            widget.pack_start(candidate_buttons[-1], False, False, 0)
         if is_voting == True:
             candidate_list.append(("None of the above", "None", "None", None))
             candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
             candidate_buttons[-1].connect("toggled", on_button_toggled, None)
             candidate_buttons[-1].set_active(True)
-            widget.pack_start(candidate_buttons[-1], False, False, 0)
+        #delete spinner
+        widget.remove(spinner)
+        for button in candidate_buttons:
+            widget.pack_start(button, False, False, 0)
         widget.show_all()
         candidates_populated = True
-    print(type(widget))
     if type(widget) == gi.repository.Gtk.Box:
         try:
             assistant.set_page_complete(page5, True)
@@ -620,27 +654,12 @@ def load_candidates(widget, spinner, is_voting):
 def prepare_handler(widget, data):
     if page5 == data:
         print("Validate Unique User ID...")
-        valid_id_response = validate_voter_id(builder.get_object("entry_voter_id").get_text())
-        if valid_id_response == "valid_non_voted":
-            builder.get_object("spinner1").start()
-            print("Spinner started...")
-            thread = threading.Thread(target=load_candidates, args=(page5, page5.get_children()[-1],True))
-            thread.daemon = True
-            thread.start()
-        elif valid_id_response == "valid_voted":
-            dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Possible Voter Fraud")
-            dialog.format_secondary_text("Voter ID " + builder.get_object("entry_voter_id").get_text() + " has already voted.")
-            dialog.run()
-            print("ERROR dialog closed")
-            dialog.destroy()
-            assistant.previous_page()
-        elif valid_id_response == "invalid":
-            dialog = Gtk.MessageDialog(data.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Unable to validate")
-            dialog.format_secondary_text("Unable to validate voter ID " + builder.get_object("entry_voter_id").get_text() + " with the information provided.  Please try again.")
-            dialog.run()
-            print("ERROR dialog closed")
-            dialog.destroy()
-            assistant.previous_page()
+        builder.get_object("spinner1").start()
+        print("Spinner started...")
+        voter_id = builder.get_object("entry_voter_id").get_text()
+        thread = threading.Thread(target=validate_voter_id_thread, args=(widget, voter_id))
+        thread.daemon = True
+        thread.start()
     if page6 == data:
         global vote
         #show confirmation page with selected candidate information
@@ -934,4 +953,5 @@ window = builder.get_object("main_window")
 window.connect("delete-event", program_quit)
 window.show_all()
 
+Gdk.threads_init()
 Gtk.main()
