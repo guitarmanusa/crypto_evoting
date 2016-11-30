@@ -611,6 +611,8 @@ def validate_voter_id(voter_id):
 
 def load_candidates(widget, spinner, is_voting):
     global candidate_list
+    global votes
+    global candidates_populated
     if (candidate_list == None):
         try:
             global cnx
@@ -625,20 +627,26 @@ def load_candidates(widget, spinner, is_voting):
                 print("Database does not exist")
             else:
                 print(err)
-    global candidates_populated
     if len(candidate_list) >= 1 and candidates_populated == False:
+        pres = candidate_list[0][0]
+        vp = candidate_list[0][1]
+        party = candidate_list[0][2]
+        c_id = candidate_list[0][3]
         candidate_buttons = []
-        candidate_buttons.append(Gtk.RadioButton.new_with_label(None, candidate_list[0][0] + " and " + candidate_list[0][1] + " (" + candidate_list[0][2] + " Party)"))
-        candidate_buttons[-1].connect("toggled", on_button_toggled, candidate_list[0][3])
+        candidate_buttons.append(Gtk.RadioButton.new_with_label(None, pres + " and " + vp + " (" + party + " Party)"))
+        candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
+        votes.append([c_id,0])
         for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
             # add radio buttons to the page
             candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + " Party)"))
             candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
+            votes.append([c_id,0])
         if is_voting == True:
             candidate_list.append(("None of the above", "None", "None", None))
             candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
             candidate_buttons[-1].connect("toggled", on_button_toggled, None)
             candidate_buttons[-1].set_active(True)
+            votes.append([None, 0])
         #delete spinner
         widget.remove(spinner)
         for button in candidate_buttons:
@@ -662,6 +670,8 @@ def prepare_handler(widget, data):
         thread.start()
     if page6 == data:
         global votes
+        print("Finding out vote...")
+        print(len(votes), votes)
         #show confirmation page with selected candidate information
         for vote in votes:
             print(vote)
@@ -693,12 +703,12 @@ def submit():
 
 def on_button_toggled(changed_button, c_id):
     global votes
-    votes = []
-    for button in changed_button.get_group():
-        if button.get_active():
-            votes.append([button.get_name(), 1])
-        else:
-            votes.append([button.get_name(), 0])
+    for vote in votes:
+        if vote[0] == c_id:
+            if changed_button.get_active():
+                vote[1] = 1
+            else:
+                vote[1] = 0
 
 def sanitize_id(widget):
     new_text = widget.get_text()
@@ -835,17 +845,20 @@ def submit_candidate(widget):
 
 def delete_candidate(widget):
     print("TODO...delete candidate")
-    global vote
+    global votes
     global cnx
+    for vote in votes:
+        if vote[1] == 1:
+            candidate_selected = vote[0]
     try:
-        query = ("DELETE FROM candidates WHERE c_id = " + str(vote))
+        query = ("DELETE FROM candidates WHERE c_id = " + str(candidate_selected))
         cursor = cnx.cursor()
         cursor.execute(query)
         cnx.commit()
         for candidate in candidate_list:
-            if candidate[3] == vote:
+            if candidate[3] == candidate_selected:
                 dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Candidate removed.")
-                dialog.format_secondary_text("Candidate ID: "+str(vote)+"\n\
+                dialog.format_secondary_text("Candidate ID: "+str(vote[0])+"\n\
                     Presidential Nominee: "+candidate[0]+"\n\
                     Vice Presidential Nominee: "+candidate[1]+"\n\
                     Party: "+candidate[2])
