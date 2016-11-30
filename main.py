@@ -103,10 +103,65 @@ def finalize_election(widget):
     print("TODO, don't allow further changes to voters or candidates tables.")
 
 def calc_election_results(widget):
-    print("TODO, add all the encrypted votes, display results.")
-    #TODO calc encrypted sum
+    print("Add all the encrypted votes, display results.")
+    global candidate_list
+    try:
+        global cnx
+        cursor = cnx.cursor()
+        query = ("SELECT * FROM private_key")
+        cursor.execute(query)
+        for (Lambda, mu) in list(cursor):
+            private_key = paillier.PaillierPrivateKey(public_key, int(Lambda), int(mu))
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+    try:
+        global cnx
+        cursor = cnx.cursor()
+        query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
+        cursor.execute(query)
+        candidate_list = []
+        for (pres_nom, vp_nom, party, c_id) in list(cursor):
+            candidate_list.append([pres_nom, vp_nom, c_id])
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+    #calc encrypted sum
+    for i in range(0,len(candidate_list)):
+        candidate_sum = public_key.encrypt(0)
+        try:
+            # (voter_id, encrypted_vote, signature, c_id)
+            query = ("SELECT ctxt FROM votes WHERE c_id = " + str(candidate_list[i][2]))
+            cursor = cnx.cursor()
+            cursor.execute(query)
+            for (ctxt_vote) in list(cursor):
+                encrypted_vote = paillier.EncryptedNumber(public_key, int(ctxt_vote[0]))
+                candidate_sum = candidate_sum._add_encrypted(encrypted_vote)
+            cursor.close()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+        #decrypt sums
+        candidate_list[i].append(private_key.decrypt(candidate_sum))
+    #determin the winner
+    def getkey(candidate):
+        return candidate[3]
+    results_list = sorted(candidate_list, key=getkey, reverse=True)
+    print(results_list)
+    candidate_list = None #reset because we needed it as a list vice a tuple to calc results
     #TODO display results
-        #TODO display fake results, then plug in real values
 
 def delete_admin_main_window():
     for child in builder.get_object("box1").get_children():
