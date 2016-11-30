@@ -635,26 +635,31 @@ def load_candidates(widget, spinner, is_voting):
                 print("Database does not exist")
             else:
                 print(err)
-    if len(candidate_list) >= 1 and candidates_populated == False:
+    if len(candidate_list) > 1 and candidates_populated == False:
+        if is_voting == False:
+            for candidate in candidate_list:
+                if candidate[3] == 1:
+                    candidate_list.remove(candidate)
         pres = candidate_list[0][0]
         vp = candidate_list[0][1]
         party = candidate_list[0][2]
         c_id = candidate_list[0][3]
         candidate_buttons = []
-        candidate_buttons.append(Gtk.RadioButton.new_with_label(None, pres + " and " + vp + " (" + party + " Party)"))
+        if c_id == 1:
+            candidate_buttons.append(Gtk.RadioButton.new_with_label(None, "None of the Above"))
+        else:
+            candidate_buttons.append(Gtk.RadioButton.new_with_label(None, pres + " and " + vp + " (" + party + " Party)"))
         candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
         votes.append([c_id,0])
         for (pres_nom, vp_nom, party, c_id) in candidate_list[1:]:
             # add radio buttons to the page
-            candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + " Party)"))
+            if c_id != 1:  #make special name for "None of the above" candidate
+                candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], pres_nom + " and " + vp_nom + " (" + party + " Party)"))
+            else:
+                candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
+                candidate_buttons[-1].set_active(True)
             candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
             votes.append([c_id,0])
-        if is_voting == True:
-            candidate_list.append(("None of the above", "None", "None", None))
-            candidate_buttons.append(Gtk.RadioButton.new_with_label_from_widget(candidate_buttons[-1], "None of the Above"))
-            candidate_buttons[-1].connect("toggled", on_button_toggled, None)
-            candidate_buttons[-1].set_active(True)
-            votes.append([None, 0])
         #delete spinner
         widget.remove(spinner)
         for button in candidate_buttons:
