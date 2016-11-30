@@ -695,16 +695,56 @@ def prepare_handler(widget, data):
             if candidate[3] == candidate_selected:
                 builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
     if page7 == data:
+        submitted = True
         global votes
         print(votes)
-        #submit vote
-            #actual work done here
-            #zero knowledge proof
-            #blind signature
+        #actual work done here
+        #zero knowledge proof
+        #blind signature
+        for i in range(0,len(votes)):
             #encrypt
-            #store in database
-            #update voter id has voted
-        if submit():
+            votes[i][1] = public_key.encrypt(votes[i][1])
+            #store (signature, encrypted vote, voter_id) in database
+            try:
+                c_id = votes[i][0]
+                if c_id == "None":
+                    c_id = 0;
+                query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
+                    VALUES (\"" + builder.get_object("entry_voter_id").get_text() + "\", \
+                    \"" + str(votes[i][1].ciphertext()) + "\", \
+                    " + str(votes[i][0]) + ")"
+                )
+                cursor = cnx.cursor()
+                cursor.execute(query)
+                cnx.commit()
+                cursor.close()
+            except mysql.connector.Error as err:
+                submitted = False
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    print("Something is wrong with your user name or password")
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print("Database does not exist")
+                else:
+                    print(err)
+        #update voter id has voted
+        try:
+            query = ("UPDATE registered_voters SET has_voted = 1\
+                WHERE voter_id = " + builder.get_object("entry_voter_id").get_text()
+            )
+            cursor = cnx.cursor()
+            cursor.execute(query)
+            cnx.commit()
+            cursor.close()
+        except mysql.connector.Error as err:
+            submitted = False
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+        #submit vote
+        if submitted:
             builder.get_object("label8").set_markup("<big><b>Success!</b></big>\n\nYour vote has been successfully recorded.")
             builder.get_object("image1").set_from_file("green-checkmark.png")
         else:
