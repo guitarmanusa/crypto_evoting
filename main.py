@@ -1,7 +1,11 @@
-import ctypes, os, sys, threading, random
+import ctypes, os, sys, threading, random, socket
 from datetime import date
 from re import sub
 from phe import paillier
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
+from Crypto.Random import random
+
 try:
     import gi
 except ImportError:
@@ -31,9 +35,32 @@ candidates_populated = False
 previous_length = 0
 suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 public_key = paillier.PaillierPublicKey(
-    19210231974457548301340351552338660642697004939619007660721581126294646423024792876518345115852354799680381568215838620496851930823642097209894722294127602724600142401225631049399162795663178257037682658133513354708539255865125651372114894655441624562062895248929936849698664132513941521009663842029213885972923393334471362265455444126831392464626040046726303446719130876081954048946331828048825616274892314444894795745061533534597393860769846841718211168971790206593716438520183922226332754359156851152074562931626556443422288519592298686692880614581816952719752195247312158799685967080422250773911906281655049003112,
-    19210231974457548301340351552338660642697004939619007660721581126294646423024792876518345115852354799680381568215838620496851930823642097209894722294127602724600142401225631049399162795663178257037682658133513354708539255865125651372114894655441624562062895248929936849698664132513941521009663842029213885972923393334471362265455444126831392464626040046726303446719130876081954048946331828048825616274892314444894795745061533534597393860769846841718211168971790206593716438520183922226332754359156851152074562931626556443422288519592298686692880614581816952719752195247312158799685967080422250773911906281655049003111
+    int('1921023197445754830134035155233866064269700493961900766072158112629464642302479287651834511585235479'
+        '9680381568215838620496851930823642097209894722294127602724600142401225631049399162795663178257037682'
+        '6581335133547085392558651256513721148946554416245620628952489299368496986641325139415210096638420292'
+        '1388597292339333447136226545544412683139246462604004672630344671913087608195404894633182804882561627'
+        '4892314444894795745061533534597393860769846841718211168971790206593716438520183922226332754359156851'
+        '1520745629316265564434222885195922986866928806145818169527197521952473121587996859670804222507739119'
+        '06281655049003112'),
+    int('1921023197445754830134035155233866064269700493961900766072158112629464642302479287651834511585235479'
+        '9680381568215838620496851930823642097209894722294127602724600142401225631049399162795663178257037682'
+        '6581335133547085392558651256513721148946554416245620628952489299368496986641325139415210096638420292'
+        '1388597292339333447136226545544412683139246462604004672630344671913087608195404894633182804882561627'
+        '4892314444894795745061533534597393860769846841718211168971790206593716438520183922226332754359156851'
+        '1520745629316265564434222885195922986866928806145818169527197521952473121587996859670804222507739119'
+        '06281655049003111')
 )
+RSA_public_key = RSA.construct((
+    int('3286263872074415988522731415732565023312391530808916640547945962451032839260032818752406195649382925'
+        '5841707306963263944377173403241377917291058133635145296746759541988036065564512765895534762510687701'
+        '3057443202332373543498990044331157492829860958738717106705881273923453962522669714506317007005895148'
+        '0123315418638721207351019650573956003080466565080337749749013413154849856919689441467669745180356224'
+        '3748850604232331340511453053595728950867177885893419756755583260713280775148288207232646190641638476'
+        '2865026106742545012973705428444737625665832339539991816576370873289393586156110119028881256879626602'
+        '4666454051777956259496486109413504774033505990964594784984752008703224978055936257808192299334692169'
+        '6507236932427259974879490356859054497447834471273122930324737965380134373361037131766966503795655903'
+        '5917025800410488630756760950980868540197155188855860610741030280367298069541002364433391490995746322'
+        '7829692251765684847376359'), 65537))
 
 def program_quit(self=None, widget=None):
     try:
@@ -744,52 +771,93 @@ def prepare_handler(widget, data):
             if candidate[3] == candidate_selected:
                 builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
     if page7 == data:
-        submitted = True
+        submitted = False
         print(votes)
-        #actual work done here
-        #zero knowledge proof
-        #blind signature
+        voter_id = builder.get_object("entry_voter_id").get_text()
         for i in range(0,len(votes)):
-            #encrypt
-            votes[i][1] = public_key.encrypt(votes[i][1])
-            #store (signature, encrypted vote, voter_id) in database
-            try:
-                c_id = votes[i][0]
-                if c_id == "None":
-                    c_id = 0;
-                query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
-                    VALUES (%s, %s, %s)"
-                )
-                cursor = cnx.cursor(prepared=True)
-                cursor.execute(query, (builder.get_object("entry_voter_id").get_text(), str(votes[i][1].ciphertext()), str(votes[i][0])))
-                cnx.commit()
-                cursor.close()
-            except mysql.connector.Error as err:
-                submitted = False
-                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                    print("Something is wrong with your user name or password")
-                elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                    print("Database does not exist")
-                else:
-                    print(err)
-        #update voter id has voted
-        try:
-            query = ("UPDATE registered_voters SET has_voted = 1\
-                WHERE voter_id = %s"
-            )
-            cursor = cnx.cursor(prepared=True)
-            cursor.execute(query, (builder.get_object("entry_voter_id").get_text(),))
-            cnx.commit()
-            cursor.close()
-        except mysql.connector.Error as err:
-            submitted = False
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print("Database does not exist")
+            #actual work done here
+            #zero knowledge proof
+            #generate
+            #blind signature
+            bs_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            bs_socket.connect(('localhost', 8888))
+            ## Protocol: Blind signature ##
+            # must be guaranteed to be chosen uniformly at random
+            r = random.randint(0, RSA_public_key.n)
+            msg_plain_text = str(votes[i][1])
+            c_id = str(votes[i][0])
+
+            msg_for_signing = voter_id + "-" + msg_plain_text + "-" + c_id
+
+            # hash message so that messages of arbitrary length can be signed
+            hash = SHA256.new()
+            hash.update(msg_for_signing.encode('utf-8'))
+            msgDigest = hash.digest()
+            print("digest: ", msgDigest)
+            print(sys.getsizeof(msgDigest))
+
+            # user computes
+            msg_blinded = RSA_public_key.blind(msgDigest, r)
+            print("Blinded Message: ", msg_blinded)
+            print(sys.getsizeof(msg_blinded))
+            #send for signing
+            bs_socket.send(msg_blinded)
+            #wait for signature
+            data = bs_socket.recv(500)
+            print(data)
+            #match the beginning of the string to "SUCCESS"
+            if data.decode('utf-8') == "FAILED":
+                blind_signature = None
+                do_continue = False
             else:
-                print(err)
-        #submit vote
+                #save the rest of the response as the blind_signature
+                blind_signature = data
+                do_continue = True
+            bs_socket.close()
+
+            if blind_signature != None and do_continue == True:
+                #encrypt
+                votes[i][1] = public_key.encrypt(votes[i][1])
+                #store (signature, encrypted vote, voter_id) in database
+                try:
+                    c_id = votes[i][0]
+                    if c_id == "None":
+                        c_id = 0;
+                    query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
+                        VALUES (%s, %s, %s)"
+                    )
+                    cursor = cnx.cursor(prepared=True)
+                    cursor.execute(query, (builder.get_object("entry_voter_id").get_text(), str(votes[i][1].ciphertext()), str(votes[i][0])
+                    ))
+                    cnx.commit()
+                    cursor.close()
+                    submitted = True
+                except mysql.connector.Error as err:
+                    submitted = False
+                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                        print("Something is wrong with your user name or password")
+                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                        print("Database does not exist")
+                    else:
+                        print(err)
+                #update voter id has voted
+                try:
+                    query = ("UPDATE registered_voters SET has_voted = 1\
+                        WHERE voter_id = %s"
+                    )
+                    cursor = cnx.cursor(prepared=True)
+                    cursor.execute(query, (builder.get_object("entry_voter_id").get_text(),))
+                    cnx.commit()
+                    cursor.close()
+                except mysql.connector.Error as err:
+                    submitted = False
+                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                        print("Something is wrong with your user name or password")
+                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                        print("Database does not exist")
+                    else:
+                        print(err)
+        #vote was submitted successfully
         if submitted:
             builder.get_object("label8").set_markup("<big><b>Success!</b></big>\n\nYour vote has been successfully recorded.")
             builder.get_object("image1").set_from_file("green-checkmark.png")
@@ -1074,5 +1142,5 @@ window = builder.get_object("main_window")
 window.connect("delete-event", program_quit)
 window.show_all()
 
-Gdk.threads_init()
+GObject.threads_init()
 Gtk.main()
