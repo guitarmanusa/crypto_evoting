@@ -3,11 +3,11 @@
     Credit to http://www.binarytides.com/python-socket-server-code-example/
 '''
 
-import socket, sys, threading
+import socket, sys, threading, ssl
 from Crypto.PublicKey import RSA
 
 HOST = ''   # Symbolic name meaning all available interfaces
-PORT = 8888 # Arbitrary non-privileged port
+PORT = 8443 # Arbitrary non-privileged port
 RSA_private_key = RSA.construct((
     int('3286263872074415988522731415732565023312391530808916640547945962451032839260032818752406195649382925'
         '5841707306963263944377173403241377917291058133635145296746759541988036065564512765895534762510687701'
@@ -47,6 +47,10 @@ RSA_private_key = RSA.construct((
         '38484129753291039384174315026630418515764098957297791847701740'))
 )
 
+
+context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+context.load_cert_chain(certfile="server-cert.pem", keyfile="server-key.pem")
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print('Socket created')
 
@@ -64,15 +68,14 @@ s.listen(10)
 print('Socket now listening')
 
 #Function for handling connections. This will be used to create threads
-def clientthread(conn):
+def handle_client(conn):
     #Sending message to connected client
     #conn.send('Welcome to the server. Type something and hit enter\n'.encode('ASCII')) #send only takes string
-
     #infinite loop so that function do not terminate and thread do not end.
     while True:
 
         #Receiving blinded message from client
-        data = conn.recv(500)
+        data = conn.recv(1024)
         print(sys.getsizeof(data), data)
         if not data:
             break
@@ -84,18 +87,18 @@ def clientthread(conn):
         #send the signature, second element is always None
         conn.send(bytes(str(msg_blinded_signature[0]),'ascii'))
 
-    #came out of loop
-    conn.close()
-
 #now keep talking with the client
 while 1:
     #wait to accept a connection - blocking call
     conn, addr = s.accept()
+    connstream = context.wrap_socket(conn, server_side=True)
+
     print('Connected with ' + addr[0] + ':' + str(addr[1]))
 
-    #start new thread takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
-    thread = threading.Thread(target=clientthread, args=(conn,))
-    thread.daemon = True
-    thread.start()
+    try:
+        handle_client(connstream)
+    finally:
+        connstream.shutdown(socket.SHUT_RDWR)
+        connstream.close()
 
 s.close()

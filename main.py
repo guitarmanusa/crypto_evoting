@@ -1,4 +1,4 @@
-import ctypes, os, sys, threading, random, socket
+import ctypes, os, sys, threading, random, socket, ssl
 from datetime import date
 from re import sub
 from phe import paillier
@@ -774,13 +774,20 @@ def prepare_handler(widget, data):
         submitted = False
         print(votes)
         voter_id = builder.get_object("entry_voter_id").get_text()
+
+        #make TLS connection to EM/BB
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.check_hostname = False
+        context.load_verify_locations("ca.pem")
+        conn = context.wrap_socket(socket.socket(socket.AF_INET))
+        conn.connect(('localhost', 8443))
+
         for i in range(0,len(votes)):
             #actual work done here
             #zero knowledge proof
-            #generate
-            #blind signature
-            bs_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            bs_socket.connect(('localhost', 8888))
+            #TODO
+            #generate blind signature
             ## Protocol: Blind signature ##
             # must be guaranteed to be chosen uniformly at random
             r = random.randint(0, RSA_public_key.n)
@@ -801,9 +808,9 @@ def prepare_handler(widget, data):
             print("Blinded Message: ", msg_blinded)
             print(sys.getsizeof(msg_blinded))
             #send for signing
-            bs_socket.send(msg_blinded)
+            conn.send(msg_blinded)
             #wait for signature
-            data = bs_socket.recv(500)
+            data = conn.recv(1024)
             print(data)
             #match the beginning of the string to "SUCCESS"
             if data.decode('utf-8') == "FAILED":
@@ -813,7 +820,6 @@ def prepare_handler(widget, data):
                 #save the rest of the response as the blind_signature
                 blind_signature = data
                 do_continue = True
-            bs_socket.close()
 
             if blind_signature != None and do_continue == True:
                 #encrypt
@@ -857,6 +863,7 @@ def prepare_handler(widget, data):
                         print("Database does not exist")
                     else:
                         print(err)
+        conn.close()
         #vote was submitted successfully
         if submitted:
             builder.get_object("label8").set_markup("<big><b>Success!</b></big>\n\nYour vote has been successfully recorded.")
