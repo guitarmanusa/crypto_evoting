@@ -120,7 +120,6 @@ def calc_election_results(widget):
         else:
             print(err)
     try:
-        global cnx
         cursor = cnx.cursor()
         query = ("SELECT pres_nom, vp_nom, party, c_id FROM candidates")
         cursor.execute(query)
@@ -492,6 +491,7 @@ def get_suffix_index(suffix):
     }[suffix]
 
 def format_ssn(widget):
+    global previous_length
     if ((len(widget.get_text()) == 3 and previous_length != 4) \
         or (len(widget.get_text()) == 6 and previous_length != 7)) \
         and previous_length != 8 and \
@@ -506,7 +506,6 @@ def format_ssn(widget):
         widget.stop_emission("changed")
         widget.set_text(test[:-1])
         GObject.idle_add(widget.set_position, -1)
-    global previous_length
     previous_length = len(widget.get_text())
 
 def save_edit_voter(widget):
@@ -723,6 +722,7 @@ def load_candidates(widget, spinner, is_voting):
             print("You dun messed up A-A-RON!!")
 
 def prepare_handler(widget, data):
+    global votes
     if page5 == data:
         print("Validate Unique User ID...")
         builder.get_object("spinner1").start()
@@ -732,7 +732,6 @@ def prepare_handler(widget, data):
         thread.daemon = True
         thread.start()
     if page6 == data:
-        global votes
         print("Finding out vote...")
         print(len(votes), votes)
         #show confirmation page with selected candidate information
@@ -746,7 +745,6 @@ def prepare_handler(widget, data):
                 builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
     if page7 == data:
         submitted = True
-        global votes
         print(votes)
         #actual work done here
         #zero knowledge proof
