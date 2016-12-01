@@ -524,9 +524,9 @@ def save_edit_voter(widget):
     if check_voter_info(widget, fname, lname, address, ssn):
         #send to MySQL database
         try:
-            query = ("UPDATE registered_voters SET first_name = \"%s\", \
-                middle_name = \"%s\", last_name = \"%s\", \
-                suffix = \"%s\", address = \"%s\", birth = \"%s\", ssn = \"%s\" WHERE voter_id = %s")
+            query = ("UPDATE registered_voters SET first_name = %s, \
+                middle_name = %s, last_name = %s, suffix = %s, address = %s, \
+                birth = %s, ssn = %s WHERE voter_id = %s")
             print(query)
             cursor = cnx.cursor(prepared=True)
             cursor.execute(query (fname, mname, lname, suffix, address, dob_str, ssn, voter_id))
