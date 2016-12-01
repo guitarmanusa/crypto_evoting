@@ -139,9 +139,9 @@ def calc_election_results(widget):
         candidate_sum = public_key.encrypt(0)
         try:
             # (voter_id, encrypted_vote, signature, c_id)
-            query = ("SELECT ctxt FROM votes WHERE c_id = " + str(candidate_list[i][2]))
-            cursor = cnx.cursor()
-            cursor.execute(query)
+            cursor = cnx.cursor(prepared=True)
+            query = ("SELECT ctxt FROM votes WHERE c_id = %s")
+            cursor.execute(query, (str(candidate_list[i][2]),))
             for (ctxt_vote) in list(cursor):
                 encrypted_vote = paillier.EncryptedNumber(public_key, int(ctxt_vote[0]))
                 candidate_sum = candidate_sum._add_encrypted(encrypted_vote)
@@ -238,10 +238,9 @@ def submit_voter_info(widget, fname, mname, lname, suffix, dob, address, ssn):
         try:
             query = ("INSERT INTO registered_voters (voter_id, first_name, \
                 middle_name, last_name, suffix, address, birth, ssn, has_voted) \
-                VALUES (" + str(voter_id) + ", \"" + fname + "\", \"" + mname + "\", \"" + lname + \
-                "\", \"" + suffix + "\", \"" + address + "\", \"" + dob_str + "\", \"" + ssn + "\", 0)")
-            cursor = cnx.cursor()
-            cursor.execute(query)
+                VALUES (%s, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", 0)")
+            cursor = cnx.cursor(prepared=True)
+            cursor.execute(query, (str(voter_id), fname , mname, lname , suffix , address , dob_str , ssn,))
             cnx.commit()
             cursor.close()
             dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Registered Voter.")
@@ -276,10 +275,9 @@ def check_dup_voter(fname, mname, lname, suffix, dob_str, address, ssn):
                 return "SSN"
         query = ("SELECT first_name, middle_name, last_name, suffix, birth, address, ssn \
             FROM registered_voters \
-            WHERE first_name = \"" + fname + "\" AND middle_name = \"" + mname + "\" AND " \
-            "last_name = \"" + lname + "\" AND suffix = \"" + suffix + "\" AND birth = \"" \
-            + dob_str + "\" AND ssn = \"" + ssn + "\"")
-        cursor.execute(query)
+            WHERE first_name = \"%s\" AND middle_name = \"%s\" AND " \
+            "last_name = \"%s\" AND suffix = \"%s\" AND birth = \"%s\" AND ssn = \"%s\"")
+        cursor.execute(query, (fname, mname, lname, suffix, dob_str, ssn,))
         print("Length of duplicate voter list: ", len(list(cursor)))
         if len(list(cursor)) > 0:
             return "Voter"
@@ -441,10 +439,9 @@ def edit_voter(widget):
     try:
         global cnx
         query = ("SELECT first_name, middle_name, last_name, suffix, birth, address, ssn \
-            FROM registered_voters WHERE voter_id = " + \
-            builder.get_object("entry_edit_voter_id").get_text())
-        cursor = cnx.cursor()
-        cursor.execute(query)
+            FROM registered_voters WHERE voter_id = %s")
+        cursor = cnx.cursor(prepared=True)
+        cursor.execute(query, (builder.get_object("entry_edit_voter_id").get_text(),))
         list_cursor = list(cursor)
         if len(list_cursor) == 1:
             delete_admin_main_window()
@@ -528,13 +525,12 @@ def save_edit_voter(widget):
     if check_voter_info(widget, fname, lname, address, ssn):
         #send to MySQL database
         try:
-            query = ("UPDATE registered_voters SET first_name = \"" + fname + "\", \
-                middle_name = \"" + mname + "\", last_name = \"" + lname + "\", \
-                suffix = \"" + suffix + "\", address = \"" + address + "\", birth = \"" + dob_str +\
-                "\", ssn = \"" + ssn + "\" WHERE voter_id = " + voter_id)
+            query = ("UPDATE registered_voters SET first_name = \"%s\", \
+                middle_name = \"%s\", last_name = \"%s\", \
+                suffix = \"%s\", address = \"%s\", birth = \"%s\", ssn = \"%s\" WHERE voter_id = %s")
             print(query)
-            cursor = cnx.cursor()
-            cursor.execute(query)
+            cursor = cnx.cursor(prepared=True)
+            cursor.execute(query (fname, mname, lname, suffix, address, dob_str, ssn, voter_id,))
             cnx.commit()
             cursor.close()
             dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Updated Voter Information.")
@@ -556,10 +552,9 @@ def delete_voter(widget):
     # check to see if the voter_id is NOT in the database (== False)
     if check_voter_id(builder.get_object("entry_delete_voter_id").get_text()) == False:
         try:
-            query = ("DELETE FROM registered_voters WHERE voter_id = " + \
-                builder.get_object("entry_delete_voter_id").get_text())
-            cursor = cnx.cursor()
-            cursor.execute(query)
+            query = ("DELETE FROM registered_voters WHERE voter_id = %s")
+            cursor = cnx.cursor(prepared=True)
+            cursor.execute(query, (builder.get_object("entry_delete_voter_id").get_text(),))
             cnx.commit()
             dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Voter removed.")
             dialog.format_secondary_text("Voter ID: "+str(builder.get_object("entry_delete_voter_id").get_text()))
@@ -765,12 +760,10 @@ def prepare_handler(widget, data):
                 if c_id == "None":
                     c_id = 0;
                 query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
-                    VALUES (\"" + builder.get_object("entry_voter_id").get_text() + "\", \
-                    \"" + str(votes[i][1].ciphertext()) + "\", \
-                    " + str(votes[i][0]) + ")"
+                    VALUES (\"%s\", \"%s\",%s)"
                 )
-                cursor = cnx.cursor()
-                cursor.execute(query)
+                cursor = cnx.cursor(prepared=True)
+                cursor.execute(query, (builder.get_object("entry_voter_id").get_text(), str(votes[i][1].ciphertext()), str(votes[i][0]),))
                 cnx.commit()
                 cursor.close()
             except mysql.connector.Error as err:
@@ -784,10 +777,10 @@ def prepare_handler(widget, data):
         #update voter id has voted
         try:
             query = ("UPDATE registered_voters SET has_voted = 1\
-                WHERE voter_id = " + builder.get_object("entry_voter_id").get_text()
+                WHERE voter_id = %s"
             )
-            cursor = cnx.cursor()
-            cursor.execute(query)
+            cursor = cnx.cursor(prepared=True)
+            cursor.execute(query, (builder.get_object("entry_voter_id").get_text(),))
             cnx.commit()
             cursor.close()
         except mysql.connector.Error as err:
@@ -915,12 +908,10 @@ def submit_candidate(widget):
     if proceed == "":
         try:
             query = ("INSERT INTO candidates (pres_nom, vp_nom, party)\
-                VALUES (\"" + builder.get_object("entry_pres_nom").get_text() + "\", \
-                \"" + builder.get_object("entry_vpres_nom").get_text() + "\", \
-                \"" + builder.get_object("entry_party").get_text() + "\")"
+                VALUES (\"%s\",\"%s\",\"%s\")"
             )
-            cursor = cnx.cursor()
-            cursor.execute(query)
+            cursor = cnx.cursor(prepared=True)
+            cursor.execute(query, (builder.get_object("entry_pres_nom").get_text(), builder.get_object("entry_vpres_nom").get_text(), builder.get_object("entry_party").get_text(),))
             cnx.commit()
             cursor.close()
             dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "Sucess: Added candidates to ballot.")
@@ -959,9 +950,9 @@ def delete_candidate(widget):
         if vote[1] == 1:
             candidate_selected = vote[0]
     try:
-        query = ("DELETE FROM candidates WHERE c_id = " + str(candidate_selected))
-        cursor = cnx.cursor()
-        cursor.execute(query)
+        query = ("DELETE FROM candidates WHERE c_id = %s")
+        cursor = cnx.cursor(prepared=True)
+        cursor.execute(query, (str(candidate_selected)))
         cnx.commit()
         for candidate in candidate_list:
             if candidate[3] == candidate_selected:
