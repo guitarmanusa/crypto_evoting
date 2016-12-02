@@ -1,7 +1,8 @@
-import ctypes, os, sys, threading, random, socket, ssl
+import ctypes, os, sys, threading, random, socket, ssl, gmpy2
 from datetime import date
 from re import sub
 from phe import paillier
+from phe.util import powmod
 from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA256
 from Crypto.Random import random
@@ -37,20 +38,8 @@ candidate_buttons = None
 previous_length = 0
 suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 public_key = paillier.PaillierPublicKey(
-    int('1921023197445754830134035155233866064269700493961900766072158112629464642302479287651834511585235479'
-        '9680381568215838620496851930823642097209894722294127602724600142401225631049399162795663178257037682'
-        '6581335133547085392558651256513721148946554416245620628952489299368496986641325139415210096638420292'
-        '1388597292339333447136226545544412683139246462604004672630344671913087608195404894633182804882561627'
-        '4892314444894795745061533534597393860769846841718211168971790206593716438520183922226332754359156851'
-        '1520745629316265564434222885195922986866928806145818169527197521952473121587996859670804222507739119'
-        '06281655049003112'),
-    int('1921023197445754830134035155233866064269700493961900766072158112629464642302479287651834511585235479'
-        '9680381568215838620496851930823642097209894722294127602724600142401225631049399162795663178257037682'
-        '6581335133547085392558651256513721148946554416245620628952489299368496986641325139415210096638420292'
-        '1388597292339333447136226545544412683139246462604004672630344671913087608195404894633182804882561627'
-        '4892314444894795745061533534597393860769846841718211168971790206593716438520183922226332754359156851'
-        '1520745629316265564434222885195922986866928806145818169527197521952473121587996859670804222507739119'
-        '06281655049003111')
+    int('188'),
+    int('187')
 )
 RSA_public_key = RSA.construct((
     int('3286263872074415988522731415732565023312391530808916640547945962451032839260032818752406195649382925'
@@ -783,6 +772,7 @@ def prepare_handler(widget, data):
             if candidate[3] == candidate_selected:
                 builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
     if page7 == data:
+        ZKP_STATUS = True
         submitted = False
         print(votes)
         voter_id = builder.get_object("entry_voter_id").get_text()
@@ -797,84 +787,128 @@ def prepare_handler(widget, data):
 
         for i in range(0,len(votes)):
             #actual work done here
-            #zero knowledge proof
-            #TODO
-            #generate blind signature
-            ## Protocol: Blind signature ##
-            # must be guaranteed to be chosen uniformly at random
-            r = random.randint(0, RSA_public_key.n)
-            msg_plain_text = str(votes[i][1])
-            c_id = str(votes[i][0])
+            #encrypt (need ciphertext for ZKP)
+            m = votes[i][1]
+            x = random.randint(1,500)
+            enc_vote = public_key.encrypt(votes[i][1], x)
+            votes[i][1] = enc_vote
+            #start zero knowledge proof
+            conn.send(bytes("ZKP START",'ascii'))
 
-            msg_for_signing = voter_id + "-" + msg_plain_text + "-" + c_id
-
-            # hash message so that messages of arbitrary length can be signed
-            hash = SHA256.new()
-            hash.update(msg_for_signing.encode('utf-8'))
-            msgDigest = hash.digest()
-            print("digest: ", msgDigest)
-            print(sys.getsizeof(msgDigest))
-
-            # user computes
-            msg_blinded = RSA_public_key.blind(msgDigest, r)
-            print("Blinded Message: ", msg_blinded)
-            print(sys.getsizeof(msg_blinded))
-            #send for signing
-            conn.send(msg_blinded)
-            #wait for signature
-            data = conn.recv(1024)
-            print(data)
-            #match the beginning of the string to "SUCCESS"
-            if data.decode('utf-8') == "FAILED":
-                blind_signature = None
-                do_continue = False
-            else:
-                #save the rest of the response as the blind_signature
-                blind_signature = data
-                do_continue = True
-
-            if blind_signature != None and do_continue == True:
-                #encrypt
-                votes[i][1] = public_key.encrypt(votes[i][1])
-                #store (signature, encrypted vote, voter_id) in database
-                try:
-                    c_id = votes[i][0]
-                    if c_id == "None":
-                        c_id = 0;
-                    query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
-                        VALUES (%s, %s, %s)"
-                    )
-                    cursor = cnx.cursor(prepared=True)
-                    cursor.execute(query, (builder.get_object("entry_voter_id").get_text(), str(votes[i][1].ciphertext()), str(votes[i][0])
-                    ))
-                    cnx.commit()
-                    cursor.close()
-                    submitted = True
-                except mysql.connector.Error as err:
-                    submitted = False
-                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                        print("Something is wrong with your user name or password")
-                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                        print("Database does not exist")
+            for j in range(1,2):
+                if ZKP_STATUS == True:
+                    print("ZKP Started...round " + str(j))
+                    print("x: ", x)
+                    c = votes[i][1].ciphertext()
+                    c_check = ((public_key.g**m)*(x**public_key.n)) % public_key.nsquare
+                    print(c == c_check)
+                    r = random.randint(0,public_key.n)
+                    print("r = ", r)
+                    s = random.randint(3,public_key.n)
+                    while s == r: # make s in the set Z*n (excluding r)
+                        s = random.randint(3,public_key.n)
+                    print("s = ", s)
+                    u = powmod(public_key.g,r, public_key.nsquare)*powmod(s,public_key.n,public_key.nsquare)
+                    print("u = ", u)
+                    conn.send(bytes(str(c),'ascii'))
+                    conn.send(bytes(str(u),'ascii'))
+                    #get e back
+                    e = conn.recv(1024)
+                    e = int(e.decode('ascii'))
+                    print("e: ", e)
+                    #calculate v and w
+                    v = r-(e*m)
+                    print("v: ", v)
+                    print("Yellow")
+                    w = (s*(x**-e)) % public_key.nsquare
+                    print("w: ", w)
+                    #print("w: ", w)
+                    conn.send(bytes(str(v),'ascii'))
+                    conn.send(bytes(str(w),'ascii'))
+                    resp = conn.recv(1024)
+                    resp = resp.decode('ascii')
+                    print("U calculated by server: ", resp)
+                    if resp == "PASS ROUND":
+                        print("Passed round " + str(j) + " of 2 in ZKP.")
                     else:
-                        print(err)
-                #update voter id has voted
-                try:
-                    query = ("UPDATE registered_voters SET has_voted = 1\
-                        WHERE voter_id = %s"
-                    )
-                    cursor = cnx.cursor(prepared=True)
-                    cursor.execute(query, (builder.get_object("entry_voter_id").get_text(),))
-                    cnx.commit()
-                    cursor.close()
-                except mysql.connector.Error as err:
-                    submitted = False
-                    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                        print("Something is wrong with your user name or password")
-                    elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                        print("Database does not exist")
-                    else:
-                        print(err)
+                        ZKP_STATUS = False
+                        print("Failed round " + str(j) + " of 2 in ZKP.")
+                        break
+            if ZKP_STATUS == True:
+                #generate blind signature
+                ## Protocol: Blind signature ##
+                # must be guaranteed to be chosen uniformly at random
+                r = random.randint(0, RSA_public_key.n)
+                msg_plain_text = str(votes[i][1])
+                c_id = str(votes[i][0])
+
+                msg_for_signing = voter_id + "-" + msg_plain_text + "-" + c_id
+
+                # hash message so that messages of arbitrary length can be signed
+                hash = SHA256.new()
+                hash.update(msg_for_signing.encode('utf-8'))
+                msgDigest = hash.digest()
+                print("digest: ", msgDigest)
+                print(sys.getsizeof(msgDigest))
+
+                # user computes
+                msg_blinded = RSA_public_key.blind(msgDigest, r)
+                print("Blinded Message: ", msg_blinded)
+                print(sys.getsizeof(msg_blinded))
+                #send for signing
+                conn.send(msg_blinded)
+                #wait for signature
+                data = conn.recv(1024)
+                print(data)
+                #match the beginning of the string to "SUCCESS"
+                if data.decode('utf-8') == "FAILED":
+                    blind_signature = None
+                    do_continue = False
+                else:
+                    #save the rest of the response as the blind_signature
+                    blind_signature = data
+                    do_continue = True
+
+                if blind_signature != None and do_continue == True:
+                    #store (signature, encrypted vote, voter_id) in database
+                    try:
+                        c_id = votes[i][0]
+                        if c_id == "None":
+                            c_id = 0;
+                        query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
+                            VALUES (%s, %s, %s)"
+                        )
+                        cursor = cnx.cursor(prepared=True)
+                        cursor.execute(query, (builder.get_object("entry_voter_id").get_text(), str(votes[i][1].ciphertext()), str(votes[i][0])
+                        ))
+                        cnx.commit()
+                        cursor.close()
+                        submitted = True
+                    except mysql.connector.Error as err:
+                        submitted = False
+                        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                            print("Something is wrong with your user name or password")
+                        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                            print("Database does not exist")
+                        else:
+                            print(err)
+                    #update voter id has voted
+                    try:
+                        query = ("UPDATE registered_voters SET has_voted = 1\
+                            WHERE voter_id = %s"
+                        )
+                        cursor = cnx.cursor(prepared=True)
+                        cursor.execute(query, (builder.get_object("entry_voter_id").get_text(),))
+                        cnx.commit()
+                        cursor.close()
+                    except mysql.connector.Error as err:
+                        submitted = False
+                        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                            print("Something is wrong with your user name or password")
+                        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                            print("Database does not exist")
+                        else:
+                            print(err)
         conn.close()
         #vote was submitted successfully
         if submitted:

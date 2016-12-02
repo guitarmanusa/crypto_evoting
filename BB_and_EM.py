@@ -5,6 +5,9 @@
 
 import socket, sys, threading, ssl
 from Crypto.PublicKey import RSA
+from Crypto.Random import random
+from phe.paillier import PaillierPublicKey
+from phe.util import powmod
 
 HOST = ''   # Symbolic name meaning all available interfaces
 PORT = 8443 # Arbitrary non-privileged port
@@ -46,7 +49,10 @@ RSA_private_key = RSA.construct((
         '6448968243743443665102431436949177200582903936634957540698176693179452224130375241137422201752548805'
         '38484129753291039384174315026630418515764098957297791847701740'))
 )
-
+public_key = PaillierPublicKey(
+    int('188'),
+    int('187')
+)
 
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 context.load_cert_chain(certfile="server-cert.pem", keyfile="server-key.pem")
@@ -80,12 +86,46 @@ def handle_client(conn):
         if not data:
             break
 
-        #calculate signature
-        msg_blinded_signature = RSA_private_key.sign(data, 0)
-        print(msg_blinded_signature[0])
-        print(type(msg_blinded_signature[0]))
-        #send the signature, second element is always None
-        conn.send(bytes(str(msg_blinded_signature[0]),'ascii'))
+        #determine if ZKP was sent or blind signature
+        print("Data: ",data)
+        print("Data decoded: ",data.decode('ascii'))
+
+        if data.decode('ascii') == "ZKP START":
+            print("here...")
+            #start ZKP
+            for i in range(1,2):
+                #wait for u
+                c = conn.recv(1024)
+                u = conn.recv(1024)
+                print("Received c: ", c)
+                print(c.decode("ASCII"))
+                print("Received u: ", u)
+                c = int(c.decode('ascii'))
+                u = int(u.decode('ascii'))
+                A = random.randint(1000,10000)
+                e = random.randint(0,A)
+                conn.send(bytes(str(e),'ascii'))
+                v = conn.recv(1024)
+                v = int(v.decode('ascii'))
+                print("v: ", v)
+                w = conn.recv(1024)
+                w = int(w.decode('ascii'))
+                print("w: ",w)
+                check = (public_key.g**v)*(c**e)*(w**public_key.n) % public_key.nsquare
+                print("Check: ", check)
+                if check == u:
+                    conn.send(bytes("PASS ROUND",'ascii'))
+                else:
+                    conn.send(bytes("FAILED ROUND", 'ascii'))
+        else:
+            print("there...")
+            print(type(data),data.decode('ascii'),data)
+            #calculate signature
+            msg_blinded_signature = RSA_private_key.sign(data, 0)
+            print(msg_blinded_signature[0])
+            print(type(msg_blinded_signature[0]))
+            #send the signature, second element is always None
+            conn.send(bytes(str(msg_blinded_signature[0]),'ascii'))
 
 #now keep talking with the client
 while 1:
