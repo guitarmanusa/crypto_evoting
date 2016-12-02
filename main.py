@@ -30,8 +30,10 @@ except (ImportError, RuntimeError):
 
 cnx = None
 candidate_list = None
+results_list = []
 votes = []
 candidates_populated = False
+candidate_buttons = None
 previous_length = 0
 suffixes = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 public_key = paillier.PaillierPublicKey(
@@ -130,8 +132,27 @@ def finalize_election(widget):
     print("TODO, don't allow further changes to voters or candidates tables.")
 
 def calc_election_results(widget):
+    global results_list
     print("Add all the encrypted votes, display results.")
+    delete_admin_main_window()
+    builder.get_object("box1").pack_start(builder.get_object("results_grid"), True, True, 0)
+    #calc results in a thread
+    thread = threading.Thread(target=calc_results_thread)
+    thread.daemon = True
+    thread.start()
+    thread.join()
+    #TODO display results
+    for result in results_list:
+        candidate_result = result[0] + " and " + result[1] + " received:\t<b><big>" + str(result[3]) + "</big></b>\n"
+        builder.get_object("label_results").set_text(
+            builder.get_object("label_results").get_text() + candidate_result
+        )
+    builder.get_object("label_results").set_use_markup(True)
+    builder.get_object("spinner_results").stop()
+
+def calc_results_thread():
     global candidate_list
+    global results_list
     try:
         global cnx
         cursor = cnx.cursor()
@@ -187,7 +208,6 @@ def calc_election_results(widget):
     results_list = sorted(candidate_list, key=getkey, reverse=True)
     print(results_list)
     candidate_list = None #reset because we needed it as a list vice a tuple to calc results
-    #TODO display results
 
 def delete_admin_main_window():
     for child in builder.get_object("box1").get_children():
@@ -252,7 +272,6 @@ def submit_voter_info(widget, fname, mname, lname, suffix, dob, address, ssn):
     new_user_resp = check_dup_voter(fname, mname, lname, suffix, dob_str, address, ssn)
     if new_user_resp == True:
         #generate random, unique voter id
-        random.seed()
         voter_id = random.randint(0,9999999999)
         #check it doesn't already exist in system
         is_good_voter_id = check_voter_id(voter_id) == False
@@ -395,9 +414,17 @@ def find_voter(widget):
                     builder.get_object("find_results_grid"), True, True, 0
                 )
                 builder.get_object("find_results_grid").grab_focus()
-                thread = threading.Thread(target=add_results_to_treeview, args=[results])
-                thread.daemon = True
-                thread.start()
+                #builder.get_object("box1").show_all()
+                result_store = builder.get_object("liststore_find_voter")
+                #clear previous entries
+                result_store.clear()
+                #put results into liststore
+                for result in results:
+                    print(result)
+                for (voter_id, first_name, middle_name, last_name, suffix, address, dob, ssn, has_voted) in results:
+                    dob_str = str(dob.month) + "/" + str(dob.day) + "/" + str(dob.year)
+                    new_iter = result_store.append([int(voter_id), first_name, middle_name, last_name, suffix, address, dob_str, ssn])
+                    #result_store.row_inserted(result_store.get_path(new_iter), new_iter)
             else:
                 print("No results found...")
                 dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.INFO, Gtk.ButtonsType.OK, "No results found.")
@@ -417,19 +444,6 @@ def find_voter(widget):
         dialog.format_secondary_text("No search parameters were given by user.")
         dialog.run()
         dialog.destroy()
-    return
-
-def add_results_to_treeview(results):
-    #builder.get_object("box1").show_all()
-    result_store = builder.get_object("liststore_find_voter")
-    #clear previous entries
-    result_store.clear()
-    #put results into liststore
-    for result in results:
-        print(result)
-    for (voter_id, first_name, middle_name, last_name, suffix, address, dob, ssn, has_voted) in results:
-        dob_str = str(dob.month) + "/" + str(dob.day) + "/" + str(dob.year)
-        result_store.append([int(voter_id), first_name, middle_name, last_name, suffix, address, dob_str, ssn])
     return
 
 def show_delete_voter(widget):
@@ -615,29 +629,7 @@ def cancel_button_clicked(assistant):
     program_quit()
 
 def validate_voter_id_thread(widget, voter_id):
-    print("Voter ID: ", voter_id)
-    valid_id_response = validate_voter_id(voter_id)
-    print(valid_id_response)
-    if valid_id_response == "valid_non_voted":
-        thread = threading.Thread(target=load_candidates, args=(page5, builder.get_object("spinner1"),True))
-        thread.daemon = True
-        thread.start()
-    elif valid_id_response == "valid_voted":
-        spinner = builder.get_object("spinner1")
-        spinner.stop()
-        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Possible Voter Fraud")
-        dialog.format_secondary_text("Voter ID " + builder.get_object("entry_voter_id").get_text() + " has already voted.")
-        add_mainloop_task(show_dialog_in_thread, dialog)
-        print("ERROR dialog closed")
-        add_mainloop_task(assistant.previous_page(), None)
-    elif valid_id_response == "invalid":
-        spinner = builder.get_object("spinner1")
-        spinner.stop()
-        dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Unable to validate")
-        dialog.format_secondary_text("Unable to validate voter ID " + builder.get_object("entry_voter_id").get_text() + " with the information provided.  Please try again.")
-        add_mainloop_task(show_dialog_in_thread, dialog)
-        print("ERROR dialog closed")
-        add_mainloop_task(assistant.previous_page(), None)
+    pass
 
 def add_mainloop_task(callback, *args):
     """http://stackoverflow.com/questions/26362447/dialog-in-thread-freeze-whole-app-despite-gdk-threads-enter-leave"""
@@ -693,10 +685,11 @@ def validate_voter_id(voter_id):
             print(err)
     return "invalid"
 
-def load_candidates(widget, spinner, is_voting):
+def load_candidates(is_voting):
     global candidate_list
     global votes
     global candidates_populated
+    global candidate_buttons
     if (candidate_list == None):
         try:
             global cnx
@@ -736,17 +729,7 @@ def load_candidates(widget, spinner, is_voting):
                 candidate_buttons[-1].set_active(True)
             candidate_buttons[-1].connect("toggled", on_button_toggled, c_id)
             votes.append([c_id,0])
-        #delete spinner
-        widget.remove(spinner)
-        for button in candidate_buttons:
-            widget.pack_start(button, False, False, 0)
-        widget.show_all()
         candidates_populated = True
-    if type(widget) == gi.repository.Gtk.Box:
-        try:
-            assistant.set_page_complete(page5, True)
-        except NameError:
-            print("You dun messed up A-A-RON!!")
 
 def prepare_handler(widget, data):
     global votes
@@ -755,9 +738,38 @@ def prepare_handler(widget, data):
         builder.get_object("spinner1").start()
         print("Spinner started...")
         voter_id = builder.get_object("entry_voter_id").get_text()
-        thread = threading.Thread(target=validate_voter_id_thread, args=(widget, voter_id))
-        thread.daemon = True
-        thread.start()
+        print("Voter ID: ", voter_id)
+        valid_id_response = validate_voter_id(voter_id)
+        print(valid_id_response)
+        if valid_id_response == "valid_non_voted":
+            thread = threading.Thread(target=load_candidates, args=(True,))
+            thread.start()
+            thread.join()
+            global candidate_buttons
+            #delete spinner
+            builder.get_object("spinner1").stop()
+            page5.remove(builder.get_object("spinner1"))
+            print("Candidate buttons: ", candidate_buttons)
+            for button in candidate_buttons:
+                page5.pack_start(button, False, False, 0)
+            page5.show_all()
+            assistant.set_page_complete(page5, True)
+        elif valid_id_response == "valid_voted":
+            spinner = builder.get_object("spinner1")
+            spinner.stop()
+            dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Possible Voter Fraud")
+            dialog.format_secondary_text("Voter ID " + builder.get_object("entry_voter_id").get_text() + " has already voted.")
+            add_mainloop_task(show_dialog_in_thread, dialog)
+            print("ERROR dialog closed")
+            add_mainloop_task(assistant.previous_page(), None)
+        elif valid_id_response == "invalid":
+            spinner = builder.get_object("spinner1")
+            spinner.stop()
+            dialog = Gtk.MessageDialog(widget.get_toplevel(), 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "ERROR: Unable to validate")
+            dialog.format_secondary_text("Unable to validate voter ID " + builder.get_object("entry_voter_id").get_text() + " with the information provided.  Please try again.")
+            add_mainloop_task(show_dialog_in_thread, dialog)
+            print("ERROR dialog closed")
+            add_mainloop_task(assistant.previous_page(), None)
     if page6 == data:
         print("Finding out vote...")
         print(len(votes), votes)
@@ -939,14 +951,18 @@ def show_candidate_list(widget):
     candidate_list = None
     global candidates_populated
     candidates_populated = False
-    thread = threading.Thread(target=load_candidates, args=(
-            builder.get_object("box_candidates"),
-            builder.get_object("spinner_candidates"),
-            False
-        )
-    )
+    thread = threading.Thread(target=load_candidates, args=(False,))
     thread.daemon = True
     thread.start()
+    thread.join()
+    global candidate_buttons
+    #delete spinner
+    builder.get_object("spinner_candidates").stop()
+    builder.get_object("grid_add_candidate").remove(builder.get_object("spinner_candidates"))
+    print("Candidate buttons: ", candidate_buttons)
+    for button in candidate_buttons:
+        builder.get_object("box_candidates").pack_start(button, False, False, 0)
+    builder.get_object("box_candidates").show_all()
 
 def add_candidate(widget):
     print("TODO...adding candidate")
