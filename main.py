@@ -198,7 +198,6 @@ def calc_results_thread():
                 print("Ctxt vote: ", int(ctxt_vote.decode('ascii')))
                 encrypted_vote = paillier.EncryptedNumber(public_key, int(ctxt_vote.decode('ascii')))
                 candidate_sum = candidate_sum._add_encrypted(encrypted_vote)
-                print("Candidate: "+str(cv_id)+" received a vote of: " , private_key.decrypt(encrypted_vote))
             cursor.close()
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -938,7 +937,6 @@ def prove_votes(voter_id):
                         c_id = votes[i][0]
                         if c_id == "None":
                             c_id = 0;
-                        print(private_key.decrypt(paillier.EncryptedNumber(public_key, votes[i][1].ciphertext())))
                         query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
                             VALUES (%s, %s, %s)"
                         )
