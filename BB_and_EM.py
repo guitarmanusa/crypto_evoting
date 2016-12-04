@@ -50,19 +50,24 @@ RSA_private_key = RSA.construct((
         '38484129753291039384174315026630418515764098957297791847701740'))
 )
 public_key = PaillierPublicKey(
-    int('188'),
-    int('187')
+    int('1484838658248464064259856757081154421171196989150622299748222043593445654503905553445414915359609687'
+    '77035409413270882739651258158816563585214558468913443613231772079652558633998048113787675894701782805516'
+    '041546348825706150790878817148626225214317380324006002845687798158170472767179664512573569011721121619210'),
+    int('1484838658248464064259856757081154421171196989150622299748222043593445654503905553445414915359609687'
+        '7703540941327088273965125815881656358521455846891344361323177207965255863399804811378767589470178280'
+        '5516041546348825706150790878817148626225214317380324006002845687798158170472767179664512573569011721'
+        '121619209')
 )
 
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 context.load_cert_chain(certfile="server-cert.pem", keyfile="server-key.pem")
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print('Socket created')
 
 #Bind socket to local host and port
 try:
-    s.bind((HOST, PORT))
+    sock.bind((HOST, PORT))
 except socket.error as msg:
     print('Bind failed. Error Code : ' + str(msg.errno) + ' Message ' + msg.strerror)
     sys.exit()
@@ -70,7 +75,7 @@ except socket.error as msg:
 print('Socket bind complete')
 
 #Start listening on socket
-s.listen(10)
+sock.listen(10)
 print('Socket now listening')
 
 #Function for handling connections. This will be used to create threads
@@ -88,49 +93,85 @@ def handle_client(conn):
 
         #determine if ZKP was sent or blind signature
         print("Data: ",data)
-        print("Data decoded: ",data.decode('ascii'))
 
-        if data.decode('ascii') == "ZKP START":
-            print("here...")
-            #start ZKP
-            for i in range(1,2):
-                #wait for u
-                c = conn.recv(1024)
-                u = conn.recv(1024)
-                print("Received c: ", c)
-                print(c.decode("ASCII"))
-                print("Received u: ", u)
-                c = int(c.decode('ascii'))
-                u = int(u.decode('ascii'))
-                A = random.randint(1000,10000)
-                e = random.randint(0,A)
-                conn.send(bytes(str(e),'ascii'))
-                v = conn.recv(1024)
-                v = int(v.decode('ascii'))
-                print("v: ", v)
-                w = conn.recv(1024)
-                w = int(w.decode('ascii'))
-                print("w: ",w)
-                check = (public_key.g**v)*(c**e)*(w**public_key.n) % public_key.nsquare
-                print("Check: ", check)
-                if check == u:
-                    conn.send(bytes("PASS ROUND",'ascii'))
-                else:
-                    conn.send(bytes("FAILED ROUND", 'ascii'))
-        else:
+        try:
+            print("Data decoded: ",data.decode('ascii'))
+            if data.decode('ascii') == "ZKP START":
+                print("here...")
+                #start ZKP
+                def egcd(a, b):
+                    if a == 0:
+                        return (b, 0, 1)
+                    else:
+                        g, y, x = egcd(b % a, a)
+                        return (g, x - (b // a) * y, y)
+
+                def modinv(a, m):
+                    g, x, y = egcd(a, m)
+                    if g != 1:
+                        raise Exception('modular inverse does not exist')
+                    else:
+                        return x % m
+
+                for i in range(1,5):
+                    successful = False #used to control if the multiplicative inverse of x^e does not exist, then repeat the round
+                    while not successful:
+                        #wait for u
+                        c = conn.recv(2049)
+                        print("C data: ",c)
+                        c = int(c.decode('ascii'))
+                        print("Received c: ", c)
+                        u = conn.recv(2048)
+                        u = int(u.decode('ascii'))
+                        print("Received u: ", u)
+                        A = random.randint(3,20)
+                        e = random.randint(0,A)
+                        print("e: ",e)
+                        conn.send(bytes(str(e),'ascii'))
+                        v = conn.recv(2048)
+                        v = int(v.decode('ascii'))
+                        print("v: ", v)
+                        s = conn.recv(2048)
+                        s = int(s.decode('ascii'))
+                        print("s: ", s)
+                        x = conn.recv(2048)
+                        x = int(x.decode('ascii'))
+                        #en = e*public_key.n
+                        print("x: ",x)
+                        gv = powmod(public_key.g, v, public_key.nsquare)
+                        ce = powmod(c,e,public_key.nsquare)
+                        sn = powmod(s,public_key.n, public_key.nsquare)
+                        try:
+                            check = ((gv*ce*sn) * modinv(powmod(x,e*public_key.n, public_key.nsquare), public_key.nsquare)) % public_key.nsquare
+                        except:
+                            check = "Invalid"
+                        print("N2: ", public_key.nsquare)
+                        print("Check: ", check)
+                        print("u: ", u)
+                        if check == u:
+                            conn.send(bytes("PASS ROUND",'ascii'))
+                            successful = True
+                        elif check == "Invalid":
+                            conn.send(bytes("REPEAT ROUND", 'ascii'))
+                        else:
+                            conn.send(bytes("FAILED ROUND", 'ascii'))
+                            successful = True
+        except UnicodeDecodeError:
             print("there...")
-            print(type(data),data.decode('ascii'),data)
+            #print(type(data),data.decode('ascii'),data)
             #calculate signature
             msg_blinded_signature = RSA_private_key.sign(data, 0)
             print(msg_blinded_signature[0])
             print(type(msg_blinded_signature[0]))
             #send the signature, second element is always None
             conn.send(bytes(str(msg_blinded_signature[0]),'ascii'))
+        except ValueError:
+            pass
 
 #now keep talking with the client
 while 1:
     #wait to accept a connection - blocking call
-    conn, addr = s.accept()
+    conn, addr = sock.accept()
     connstream = context.wrap_socket(conn, server_side=True)
 
     print('Connected with ' + addr[0] + ':' + str(addr[1]))
@@ -141,4 +182,4 @@ while 1:
         connstream.shutdown(socket.SHUT_RDWR)
         connstream.close()
 
-s.close()
+sock.close()
