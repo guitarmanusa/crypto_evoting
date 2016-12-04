@@ -627,11 +627,11 @@ def delete_voter(widget):
 def apply_button_clicked(assistant):
     print("The 'Apply' button has been clicked")
 
-def close_button_clicked(assistant):
+def close_button_clicked(data):
     print("The 'Close' button has been clicked")
     program_quit()
 
-def cancel_button_clicked(assistant):
+def cancel_button_clicked(data):
     print("The 'Cancel' button has been clicked")
     program_quit()
 
@@ -789,179 +789,195 @@ def prepare_handler(widget, data):
             print(candidate)
             if candidate[3] == candidate_selected:
                 builder.get_object("label6").set_text("You have selected:\n\n" + candidate[0])
-    if page7 == data:
-        ZKP_STATUS = True
-        submitted = False
-        print(votes)
-        voter_id = builder.get_object("entry_voter_id").get_text()
-
-        #make TLS connection to EM/BB
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        context.verify_mode = ssl.CERT_REQUIRED
-        context.check_hostname = False
-        context.load_verify_locations("ca.pem")
-        conn = context.wrap_socket(socket.socket(socket.AF_INET))
-        conn.connect(('localhost', 8443))
-
-        for i in range(0,len(votes)):
-            def egcd(a, b):
-                if a == 0:
-                    return (b, 0, 1)
-                else:
-                    g, y, x = egcd(b % a, a)
-                    return (g, x - (b // a) * y, y)
-
-            def modinv(a, m):
-                g, x, y = egcd(a, m)
-                if g != 1:
-                    raise Exception('modular inverse does not exist')
-                else:
-                    return x % m
-
-            if ZKP_STATUS == False:
-                break
-            else:
-                #actual work done here
-                #encrypt (need ciphertext for ZKP)
-                m = votes[i][1]
-                x = random.randint(1,10)
-                enc_vote = public_key.encrypt(votes[i][1], r_value=x)
-                votes[i][1] = enc_vote
-                #start zero knowledge proof
-                conn.send(bytes("ZKP START",'ascii'))
-
-                for j in range(1,5):
-                    if ZKP_STATUS == True:
-                        print("ZKP Started...round " + str(j))
-                        successful = False
-
-                        while not successful:
-                            print("x: ", x)
-                            c = (powmod(public_key.g,m,public_key.nsquare)*powmod(x,public_key.n,public_key.nsquare)) % public_key.nsquare
-                            print("c: ", c)
-                            r = random.randint(0,public_key.n)
-                            print("r = ", r)
-                            s = random.randint(3,public_key.n)
-                            while s == r: # make s in the set Z*n (excluding r)
-                                s = random.randint(3,public_key.n)
-                            print("s = ", s)
-                            u = (powmod(public_key.g,r,public_key.nsquare)*powmod(s,public_key.n, public_key.nsquare)) % public_key.nsquare
-                            print("u = ", u)
-                            #send c and u
-                            conn.send(bytes(str(c),'ascii'))
-                            conn.send(bytes(str(u),'ascii'))
-                            #get e back
-                            e = conn.recv(2048)
-                            e = int(e.decode('ascii'))
-                            print("e: ", e)
-                            try:
-                                #calculate v and w
-                                ex_inv = modinv(powmod(x,e*public_key.n, public_key.nsquare), public_key.nsquare)
-                                wn = (powmod(s, public_key.n, public_key.nsquare) * ex_inv)
-                                print("wn: ", wn)
-                                conn.send(bytes(str(wn),'ascii'))
-                                v = r-(e*m)
-                                print("v: ", v)
-                                conn.send(bytes(str(v),'ascii'))
-                                resp = conn.recv(2048)
-                                resp = resp.decode('ascii')
-                                print("U calculated by server: ", resp)
-                                if resp == "PASS ROUND":
-                                    print("Passed round " + str(j) + " of 2 in ZKP.")
-                                    successful = True
-                                else:
-                                    ZKP_STATUS = False
-                                    submitted = False
-                                    successful = True
-                                    print("Failed round " + str(j) + " of 4 in ZKP.")
-                                    break
-                            except:
-                                print("No inverse of s*x^-e, picking new e and s.")
-                                conn.send(bytes("restart", 'ascii'))
-                if ZKP_STATUS == True:
-                    #generate blind signature
-                    ## Protocol: Blind signature ##
-                    # must be guaranteed to be chosen uniformly at random
-                    r = random.randint(0, RSA_public_key.n)
-                    msg_plain_text = str(votes[i][1])
-                    c_id = str(votes[i][0])
-
-                    msg_for_signing = voter_id + "-" + msg_plain_text + "-" + c_id
-
-                    # hash message so that messages of arbitrary length can be signed
-                    hash = SHA256.new()
-                    hash.update(msg_for_signing.encode('utf-8'))
-                    msgDigest = hash.digest()
-                    print("digest: ", msgDigest)
-                    print(sys.getsizeof(msgDigest))
-
-                    # user computes
-                    msg_blinded = RSA_public_key.blind(msgDigest, r)
-                    print("Blinded Message: ", msg_blinded)
-                    print(sys.getsizeof(msg_blinded))
-                    #send for signing
-                    conn.send(msg_blinded)
-                    #wait for signature
-                    data = conn.recv(1024)
-                    print(data)
-                    #match the beginning of the string to "SUCCESS"
-                    if data.decode('utf-8') == "FAILED":
-                        blind_signature = None
-                        do_continue = False
-                    else:
-                        #save the rest of the response as the blind_signature
-                        blind_signature = data
-                        do_continue = True
-
-                    if blind_signature != None and do_continue == True:
-                        #store (signature, encrypted vote, voter_id) in database
-                        try:
-                            c_id = votes[i][0]
-                            if c_id == "None":
-                                c_id = 0;
-                            print(private_key.decrypt(paillier.EncryptedNumber(public_key, votes[i][1].ciphertext())))
-                            query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
-                                VALUES (%s, %s, %s)"
-                            )
-                            cursor = cnx.cursor(prepared=True)
-                            cursor.execute(query, (builder.get_object("entry_voter_id").get_text(), str(votes[i][1].ciphertext()), str(c_id)
-                            ))
-                            cnx.commit()
-                            cursor.close()
-                            submitted = True
-                        except mysql.connector.Error as err:
-                            submitted = False
-                            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                                print("Something is wrong with your user name or password")
-                            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                                print("Database does not exist")
-                            else:
-                                print(err)
-                        #update voter id has voted
-                        try:
-                            query = ("UPDATE registered_voters SET has_voted = 1\
-                                WHERE voter_id = %s"
-                            )
-                            cursor = cnx.cursor(prepared=True)
-                            cursor.execute(query, (builder.get_object("entry_voter_id").get_text(),))
-                            cnx.commit()
-                            cursor.close()
-                        except mysql.connector.Error as err:
-                            submitted = False
-                            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                                print("Something is wrong with your user name or password")
-                            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                                print("Database does not exist")
-                            else:
-                                print(err)
-        conn.close()
-        #vote was submitted successfully
-        if submitted:
+    if page8 == data:
+        if votes_proven == True:
             builder.get_object("label8").set_markup("<big><b>Success!</b></big>\n\nYour vote has been successfully recorded.")
             builder.get_object("image1").set_from_file("green-checkmark.png")
         else:
             builder.get_object("label8").set_markup("<big><b>Error!</b></big>\n\nThere was an error recording your vote.  Please start over again.")
             builder.get_object("image1").set_from_file("red-x.png")
+
+def submit_zkp(widget):
+    builder.get_object("spinner2").start()
+    global votes_proven
+    votes_proven = False
+    print("Page 7 votes: ", votes)
+
+    voter_id = builder.get_object("entry_voter_id").get_text()
+    thread = threading.Thread(target=prove_votes, args=[(voter_id,)])
+    thread.daemon = True
+    thread.start()
+
+def prove_votes(voter_id):
+    global votes
+    global votes_proven
+    votes_proven = False
+    ZKP_STATUS = True
+
+    #make TLS connection to EM/BB
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.check_hostname = False
+    context.load_verify_locations("ca.pem")
+    conn = context.wrap_socket(socket.socket(socket.AF_INET))
+    conn.connect(('localhost', 8443))
+
+    for i in range(0,len(votes)):
+        def egcd(a, b):
+            if a == 0:
+                return (b, 0, 1)
+            else:
+                g, y, x = egcd(b % a, a)
+                return (g, x - (b // a) * y, y)
+
+        def modinv(a, m):
+            g, x, y = egcd(a, m)
+            if g != 1:
+                raise Exception('modular inverse does not exist')
+            else:
+                return x % m
+
+        if ZKP_STATUS == False:
+            break
+        else:
+            #actual work done here
+            #encrypt (need ciphertext for ZKP)
+            m = votes[i][1]
+            x = random.randint(1,10)
+            enc_vote = public_key.encrypt(votes[i][1], r_value=x)
+            votes[i][1] = enc_vote
+            #start zero knowledge proof
+            conn.send(bytes("ZKP START",'ascii'))
+
+            for j in range(1,5):
+                if ZKP_STATUS == True:
+                    print("ZKP Started...round " + str(j))
+                    successful = False
+
+                    while not successful:
+                        print("x: ", x)
+                        c = (powmod(public_key.g,m,public_key.nsquare)*powmod(x,public_key.n,public_key.nsquare)) % public_key.nsquare
+                        print("c: ", c)
+                        r = random.randint(0,public_key.n)
+                        print("r = ", r)
+                        s = random.randint(3,public_key.n)
+                        while s == r: # make s in the set Z*n (excluding r)
+                            s = random.randint(3,public_key.n)
+                        print("s = ", s)
+                        u = (powmod(public_key.g,r,public_key.nsquare)*powmod(s,public_key.n, public_key.nsquare)) % public_key.nsquare
+                        print("u = ", u)
+                        #send c and u
+                        conn.send(bytes(str(c),'ascii'))
+                        conn.send(bytes(str(u),'ascii'))
+                        #get e back
+                        e = conn.recv(2048)
+                        e = int(e.decode('ascii'))
+                        print("e: ", e)
+                        try:
+                            #calculate v and w
+                            ex_inv = modinv(powmod(x,e*public_key.n, public_key.nsquare), public_key.nsquare)
+                            wn = (powmod(s, public_key.n, public_key.nsquare) * ex_inv)
+                            print("wn: ", wn)
+                            conn.send(bytes(str(wn),'ascii'))
+                            v = r-(e*m)
+                            print("v: ", v)
+                            conn.send(bytes(str(v),'ascii'))
+                            resp = conn.recv(2048)
+                            resp = resp.decode('ascii')
+                            print("U calculated by server: ", resp)
+                            if resp == "PASS ROUND":
+                                print("Passed round " + str(j) + " of 4 in ZKP.")
+                                successful = True
+                            else:
+                                ZKP_STATUS = False
+                                votes_proven = False
+                                successful = True
+                                print("Failed round " + str(j) + " of 4 in ZKP.")
+                                break
+                        except:
+                            print("No inverse of s*x^-e, picking new e and s.")
+                            conn.send(bytes("restart", 'ascii'))
+            if ZKP_STATUS == True:
+                #generate blind signature
+                ## Protocol: Blind signature ##
+                # must be guaranteed to be chosen uniformly at random
+                r = random.randint(0, RSA_public_key.n)
+                msg_plain_text = str(votes[i][1])
+                c_id = str(votes[i][0])
+
+                msg_for_signing = voter_id[0] + "-" + msg_plain_text + "-" + c_id
+
+                # hash message so that messages of arbitrary length can be signed
+                hash = SHA256.new()
+                hash.update(msg_for_signing.encode('utf-8'))
+                msgDigest = hash.digest()
+                print("digest: ", msgDigest)
+                print(sys.getsizeof(msgDigest))
+
+                # user computes
+                msg_blinded = RSA_public_key.blind(msgDigest, r)
+                print("Blinded Message: ", msg_blinded)
+                print(sys.getsizeof(msg_blinded))
+                #send for signing
+                conn.send(msg_blinded)
+                #wait for signature
+                data = conn.recv(1024)
+                print(data)
+                #match the beginning of the string to "SUCCESS"
+                if data.decode('utf-8') == "FAILED":
+                    blind_signature = None
+                    do_continue = False
+                else:
+                    #save the rest of the response as the blind_signature
+                    blind_signature = data
+                    do_continue = True
+
+                if blind_signature != None and do_continue == True:
+                    #store (signature, encrypted vote, voter_id) in database
+                    try:
+                        c_id = votes[i][0]
+                        if c_id == "None":
+                            c_id = 0;
+                        print(private_key.decrypt(paillier.EncryptedNumber(public_key, votes[i][1].ciphertext())))
+                        query = ("INSERT INTO votes (voter_id, ctxt, c_id)\
+                            VALUES (%s, %s, %s)"
+                        )
+                        cursor = cnx.cursor(prepared=True)
+                        cursor.execute(query, (builder.get_object("entry_voter_id").get_text(), str(votes[i][1].ciphertext()), str(c_id)
+                        ))
+                        cnx.commit()
+                        cursor.close()
+                        votes_proven = True
+                    except mysql.connector.Error as err:
+                        votes_proven = False
+                        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                            print("Something is wrong with your user name or password")
+                        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                            print("Database does not exist")
+                        else:
+                            print(err)
+                    #update voter id has voted
+                    try:
+                        query = ("UPDATE registered_voters SET has_voted = 1\
+                            WHERE voter_id = %s"
+                        )
+                        cursor = cnx.cursor(prepared=True)
+                        cursor.execute(query, (builder.get_object("entry_voter_id").get_text(),))
+                        cnx.commit()
+                        cursor.close()
+                    except mysql.connector.Error as err:
+                        votes_proven = False
+                        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                            print("Something is wrong with your user name or password")
+                        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                            print("Database does not exist")
+                        else:
+                            print(err)
+    conn.close()
+
+    #vote was submitted successfully
+    builder.get_object("spinner2").stop()
+    assistant.next_page()
 
 def submit():
     return True
@@ -1238,7 +1254,11 @@ else:
     assistant.set_page_complete(page6, True)
 
     page7 = builder.get_object("box7")
-    assistant.set_page_complete(page7, True)
+    assistant.set_page_complete(page7, False)
+    builder.get_object("button_zkp").connect("clicked", submit_zkp)
+
+    page8 = builder.get_object("box8")
+    assistant.set_page_complete(page8, True)
 
 window = builder.get_object("main_window")
 window.connect("delete-event", program_quit)
