@@ -804,6 +804,20 @@ def prepare_handler(widget, data):
         conn.connect(('localhost', 8443))
 
         for i in range(0,len(votes)):
+            def egcd(a, b):
+                if a == 0:
+                    return (b, 0, 1)
+                else:
+                    g, y, x = egcd(b % a, a)
+                    return (g, x - (b // a) * y, y)
+
+            def modinv(a, m):
+                g, x, y = egcd(a, m)
+                if g != 1:
+                    raise Exception('modular inverse does not exist')
+                else:
+                    return x % m
+
             if ZKP_STATUS == False:
                 break
             else:
@@ -818,17 +832,13 @@ def prepare_handler(widget, data):
 
                 for j in range(1,5):
                     if ZKP_STATUS == True:
+                        print("ZKP Started...round " + str(j))
                         successful = False
+
                         while not successful:
-                            print("ZKP Started...round " + str(j))
                             print("x: ", x)
-                            c = votes[i][1].ciphertext()
-                            np = powmod(public_key.g,m,public_key.nsquare)
-                            ob = powmod(x,public_key.n,public_key.nsquare)
-                            print("np: ", np)
-                            print("ob: ", ob)
-                            c_check = (powmod(public_key.g,m,public_key.nsquare)*powmod(x,public_key.n,public_key.nsquare)) % public_key.nsquare
-                            print(c, c_check, c == c_check)
+                            c = (powmod(public_key.g,m,public_key.nsquare)*powmod(x,public_key.n,public_key.nsquare)) % public_key.nsquare
+                            print("c: ", c)
                             r = random.randint(0,public_key.n)
                             print("r = ", r)
                             s = random.randint(3,public_key.n)
@@ -837,37 +847,37 @@ def prepare_handler(widget, data):
                             print("s = ", s)
                             u = (powmod(public_key.g,r,public_key.nsquare)*powmod(s,public_key.n, public_key.nsquare)) % public_key.nsquare
                             print("u = ", u)
-                            conn.send(bytes(str(c_check),'ascii'))
+                            #send c and u
+                            conn.send(bytes(str(c),'ascii'))
                             conn.send(bytes(str(u),'ascii'))
                             #get e back
                             e = conn.recv(2048)
                             e = int(e.decode('ascii'))
                             print("e: ", e)
-                            #calculate v and w
-                            v = r-(e*m)
-                            print("v: ", v)
-                            print("x: ", x)
-                            #print("w: ", w)
-                            conn.send(bytes(str(v),'ascii'))
-                            conn.send(bytes(str(s),'ascii'))
-                            conn.send(bytes(str(x),'ascii'))
-                            resp = conn.recv(2048)
-                            resp = resp.decode('ascii')
-                            print("U calculated by server: ", resp)
-                            if resp == "PASS ROUND":
-                                print("Passed round " + str(j) + " of 2 in ZKP.")
-                                successful = True
-                            elif resp == "REPEAT ROUND":
-                                pass
-                            else:
-                                # removed this line, because the math of the ZKP isn't working
-                                # if w = s*x^-e then w will results in a float type numbers
-                                # which seemingly makes the verification unable to happen correctly
-                                ZKP_STATUS = False
-                                submitted = False
-                                successful = True
-                                print("Failed round " + str(j) + " of 4 in ZKP.")
-                                break
+                            try:
+                                #calculate v and w
+                                ex_inv = modinv(powmod(x,e*public_key.n, public_key.nsquare), public_key.nsquare)
+                                wn = (powmod(s, public_key.n, public_key.nsquare) * ex_inv)
+                                print("wn: ", wn)
+                                conn.send(bytes(str(wn),'ascii'))
+                                v = r-(e*m)
+                                print("v: ", v)
+                                conn.send(bytes(str(v),'ascii'))
+                                resp = conn.recv(2048)
+                                resp = resp.decode('ascii')
+                                print("U calculated by server: ", resp)
+                                if resp == "PASS ROUND":
+                                    print("Passed round " + str(j) + " of 2 in ZKP.")
+                                    successful = True
+                                else:
+                                    ZKP_STATUS = False
+                                    submitted = False
+                                    successful = True
+                                    print("Failed round " + str(j) + " of 4 in ZKP.")
+                                    break
+                            except:
+                                print("No inverse of s*x^-e, picking new e and s.")
+                                conn.send(bytes("restart", 'ascii'))
                 if ZKP_STATUS == True:
                     #generate blind signature
                     ## Protocol: Blind signature ##

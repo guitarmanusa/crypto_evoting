@@ -99,20 +99,6 @@ def handle_client(conn):
             if data.decode('ascii') == "ZKP START":
                 print("here...")
                 #start ZKP
-                def egcd(a, b):
-                    if a == 0:
-                        return (b, 0, 1)
-                    else:
-                        g, y, x = egcd(b % a, a)
-                        return (g, x - (b // a) * y, y)
-
-                def modinv(a, m):
-                    g, x, y = egcd(a, m)
-                    if g != 1:
-                        raise Exception('modular inverse does not exist')
-                    else:
-                        return x % m
-
                 for i in range(1,5):
                     successful = False #used to control if the multiplicative inverse of x^e does not exist, then repeat the round
                     while not successful:
@@ -128,34 +114,30 @@ def handle_client(conn):
                         e = random.randint(0,A)
                         print("e: ",e)
                         conn.send(bytes(str(e),'ascii'))
-                        v = conn.recv(2048)
-                        v = int(v.decode('ascii'))
-                        print("v: ", v)
-                        s = conn.recv(2048)
-                        s = int(s.decode('ascii'))
-                        print("s: ", s)
-                        x = conn.recv(2048)
-                        x = int(x.decode('ascii'))
-                        #en = e*public_key.n
-                        print("x: ",x)
-                        gv = powmod(public_key.g, v, public_key.nsquare)
-                        ce = powmod(c,e,public_key.nsquare)
-                        sn = powmod(s,public_key.n, public_key.nsquare)
-                        try:
-                            check = ((gv*ce*sn) * modinv(powmod(x,e*public_key.n, public_key.nsquare), public_key.nsquare)) % public_key.nsquare
-                        except:
-                            check = "Invalid"
-                        print("N2: ", public_key.nsquare)
-                        print("Check: ", check)
-                        print("u: ", u)
-                        if check == u:
-                            conn.send(bytes("PASS ROUND",'ascii'))
-                            successful = True
-                        elif check == "Invalid":
-                            conn.send(bytes("REPEAT ROUND", 'ascii'))
+                        wn = conn.recv(2048)
+                        wn = wn.decode('ascii')
+                        if wn != "restart":
+                            wn = int(wn)
+                            print("wn: ", wn)
+                            v = conn.recv(2048)
+                            v = int(v.decode('ascii'))
+                            print("v: ", v)
+                            gv = powmod(public_key.g, v, public_key.nsquare)
+                            ce = powmod(c,e,public_key.nsquare)
+                            check = (gv*ce*wn) % public_key.nsquare
+                            print("N2: ", public_key.nsquare)
+                            print("Check: ", check)
+                            print("u: ", u)
+                            if check == u:
+                                conn.send(bytes("PASS ROUND",'ascii'))
+                                successful = True
+                            elif check == "Invalid":
+                                conn.send(bytes("REPEAT ROUND", 'ascii'))
+                            else:
+                                conn.send(bytes("FAILED ROUND", 'ascii'))
+                                successful = True
                         else:
-                            conn.send(bytes("FAILED ROUND", 'ascii'))
-                            successful = True
+                            print("Retrying with new s and e... no inverse to w.")
         except UnicodeDecodeError:
             print("there...")
             #print(type(data),data.decode('ascii'),data)
