@@ -19,7 +19,8 @@ Overview:
 ---------
 An example implementation of an e-voting system using Paillier's homomorphic encryption.
 To ensure that the malleability property of the Paillier system is not abused to provides
-false votes a Zero Knowledge Interactive Proof (ZKIP) is utilized.  System is cross platform
+false votes a Zero Knowledge Interactive Proof (ZKIP) is utilized.  The ZKIP agent (BB_and_EM.py)
+is currently running on the same remote server as the MySQL DB.  This system is cross platform
 by utilizing Python and GTK.
 ###Features:
 ####Admin mode:
@@ -28,6 +29,9 @@ by utilizing Python and GTK.
 - Add/Edit/Delete/Find voters
 - Calculate election results
 - About Menu
+- Demo version administrator credential
+    user: evoting_admin
+    pass: testTEST0192)!(@
 
 ####Polling Station mode:
 - Connection to MySQL database backend is encrypted (email franck6@rpi.edu for requisite ca.pem, ca.key, and ca.cert files)
@@ -71,7 +75,7 @@ Windows:
 2. Install [PyGI AIO 3.18](https://sourceforge.net/projects/pygobjectwin32/files/latest/download)
    1. Select GTK, Pango, and Glade as install options.
       1. For a dev environment, selecting "DevHelp" is recommended
-3. Install cx_Freeze, phe from python pip
+3. Install cx_Freeze, phe, pycrypto from python pip
    1. python -m pip install cx_Freeze
    2. python -m pop install phe
       1. Read about phe and it's pallier implementation [https://python-paillier.readthedocs.io/en/stable/](https://python-paillier.readthedocs.io/en/stable/)
@@ -80,7 +84,9 @@ Windows:
 5. Clone repo
    1. git clone https://github.com/guitarmanusa/crypto_evoting
 6. To run from python source ("dev environment")
-   1. python main.py
+   1. python BB_and_EM.py
+      1. This runs the ZKP agent in the background, can also change IP address to 159.203.140.245
+   2. python main.py
 7. To build
    1. python setup.py build
    2. exe will be in build/ folder
@@ -93,9 +99,11 @@ Linux:
    1. # apt-get install python3 python3-gi python3-pip libmpc-dev libmpfr-dev libgtk-3-dev
 2. Install MySQL connector
    1. http://dev.mysql.com/downloads/connector/python/
-3. Install phe, cx_Freeze (python3 -m pip install ...)
+3. Install phe, cx_Freeze, pycrypto (python3 -m pip install ...)
    1. To run from source
-      1. python3 main.py
+      1. python3 BB_and_EM.py &
+         1. This runs the ZKP agent in the background, can also change IP address to 159.203.140.245
+      2. python3 main.py
    2. To build (TODO)
       1. python3 setup.py build
 4. Installer (TODO write setup.py for linux)
